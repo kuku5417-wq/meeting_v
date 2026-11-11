@@ -1,7 +1,7 @@
 # SPEC — 호선 기준정보와 임시 데이터
 
 > 범위: `meeting` 시스템의 **호선 기준정보**(호선번호·선종·모델타입·선주·시리즈 번호) 정의와, 화면·추출을 돌려보기 위한 **임시 데이터 24호선**.
-> 데이터 파일: `samples/masters/*.csv` — 실제 데이터로 바꿀 때는 **CSV만 교체**한다(`app/services/seed.py` 문서화된 규칙).
+> 데이터 파일: `data/samples/masters/*.csv` — 실제 데이터로 바꿀 때는 **CSV만 교체**한다(`modules/seed.py` 문서화된 규칙).
 
 ## 한 줄로
 
@@ -151,7 +151,7 @@ flowchart LR
 
 ## 7. 검증 규칙
 
-`samples/masters/_check.py`로 7개를 확인한다. 적재(`seed_masters`) **전에** 돌린다 — 끊긴 연결을 DB에 만들지 않는 것이 목적이다.
+`data/samples/masters/_check.py`로 7개를 확인한다. 적재(`seed_masters`) **전에** 돌린다 — 끊긴 연결을 DB에 만들지 않는 것이 목적이다.
 
 | # | 규칙 | 어기면 생기는 일 |
 |---|---|---|
