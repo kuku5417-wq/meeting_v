@@ -246,7 +246,7 @@ function makeSlide(d, form, n, total, kTitle) {
       props:{text:'2026-W43  ·  시운전1부', fontSize:36, bold:false, color:'#4a5a72', align:'left', lineHeight:1.5}});
     objs.push({id:newId(), type:'text', locked:false, x:80, y:580, w:280, h:160,
       props:{text:'안건\n'+total, fontSize:28, bold:true, color:'#1c2f4f', align:'center', lineHeight:1.5}});
-    return {id:'cover', issueId:null, form:'cover', objs};
+    return {id:'cover', issueId:null, form:'cover', objs, hullText};
   }
 
   const p = ptag(d);
@@ -290,7 +290,7 @@ function makeSlide(d, form, n, total, kTitle) {
     if (d.dec) objs.push({id:newId(), type:'text', locked:false, x:80, y:600, w:1250, h:140,
       props:{text:'결정 필요: '+d.dec, fontSize:28, bold:false, color:'#c0392b', align:'left', lineHeight:1.5}});
   }
-  return {id:d.id, issueId:d.id, form, objs};
+  return {id:d.id, issueId:d.id, form, objs, hullText};
 }
 
 // ── 초기 슬라이드 세트 ───────────────────────────────────────
@@ -323,6 +323,7 @@ let history   = [];
 let redoStack = [];
 let dragState = null;
 let saveTimer = null;
+let copiedObj = null;
 
 // ── 되돌리기 ─────────────────────────────────────────────────
 function pushHistory() {
@@ -440,6 +441,8 @@ function slidePropsHTML() {
   return `${infoHTML}
     <div class="sec-h">형태</div>
     <div class="form-thumbs">${ftHTML}</div>
+    <div class="sec-h">슬라이드 관리</div>
+    <button class="btn sm gray" id="delSlideBtn" style="width:100%">🗑 이 슬라이드 삭제</button>
     <div class="sec-h">도형 삽입</div>
     <div class="shape-pick">
       <button data-addshape="rect">■ 사각</button>
@@ -451,7 +454,8 @@ function slidePropsHTML() {
     <button class="btn sm gray" id="addTextBtn" style="width:100%">＋ 텍스트 블록</button>
     <div class="keys-hint">
       <kbd>Delete</kbd> 삭제 · <kbd>Ctrl</kbd>+<kbd>Z</kbd> 되돌리기<br>
-      <kbd>←↑→↓</kbd> 슬라이드 이동 (선택 없을 때)<br>
+      <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> 개체 복사·붙여넣기<br>
+      <kbd>↑↓</kbd> 슬라이드 이동 (선택 없을 때)<br>
       개체 클릭 → 선택 · 더블클릭 → 텍스트 편집<br>
       사진 위에 도형을 올려서 마크업 가능<br>
       도형 추가 후 「▲ 앞으로」 버튼으로 사진 위로 이동
@@ -459,6 +463,9 @@ function slidePropsHTML() {
 }
 
 function bindSlideProps() {
+  const delSlideBtn = $('#delSlideBtn');
+  if (delSlideBtn) delSlideBtn.onclick = () => deleteSlide(curIdx);
+
   $$('#propsEl [data-form]').forEach(el => {
     el.onclick = () => {
       const sl = slides[curIdx];
@@ -470,6 +477,7 @@ function bindSlideProps() {
         const newSl = makeSlide(d, el.dataset.form, curIdx+1, slides.length, K.title);
         sl.objs = [...hf, ...newSl.objs.filter(o => o.type!=='strip')];
         sl.form = el.dataset.form;
+        sl.hullText = newSl.hullText;
       }
       markDirty(); renderAll();
     };
@@ -698,6 +706,29 @@ function deleteSelected() {
   toast('개체를 삭제했습니다', () => undo());
 }
 
+// ── 바닥띠 페이지 수 동기화 ──────────────────────────────────
+function syncFooters() {
+  const total = slides.length;
+  slides.forEach((sl, i) => {
+    const foot = sl.objs[1];
+    if (!foot || foot.type !== 'strip') return;
+    foot.props.left  = (i+1)+' / '+total+(sl.hullText?' · '+sl.hullText:'');
+    foot.props.right = FORMS[sl.form] || '';
+  });
+}
+
+// ── 슬라이드 삭제 ────────────────────────────────────────────
+function deleteSlide(idx) {
+  if (slides.length <= 1) { toast('마지막 슬라이드는 삭제할 수 없습니다'); return; }
+  pushHistory();
+  slides.splice(idx, 1);
+  if (curIdx >= slides.length) curIdx = slides.length - 1;
+  selId = null;
+  syncFooters();
+  markDirty(); renderAll();
+  toast('슬라이드를 삭제했습니다', () => undo());
+}
+
 // ── 텍스트 인라인 편집 ───────────────────────────────────────
 function startTextEdit(objId) {
   const obj = slides[curIdx].objs.find(o => o.id === objId);
@@ -863,14 +894,14 @@ $('#thumbs').addEventListener('click', e => {
   if (th) { endTextEdit(); curIdx = +th.dataset.ti; selId = null; renderAll(); return; }
   if (e.target.closest('#addSlide')) {
     pushHistory();
-    const total = slides.length + 2;
-    const newSl = {id:'new-'+Date.now(), issueId:null, form:'line', objs:[
-      ...makeHeadFoot(K.title, '', '', slides.length+1, total),
+    const newSl = {id:'new-'+Date.now(), issueId:null, form:'line', hullText:'', objs:[
+      ...makeHeadFoot(K.title, '', '', 1, 1),
       {id:newId(), type:'text', locked:false, x:80, y:420, w:1760, h:120,
        props:{text:'새 슬라이드', fontSize:48, bold:false, color:'#1c2f4f', align:'center', lineHeight:1.4}},
     ]};
     slides.push(newSl);
     curIdx = slides.length - 1;
+    syncFooters();
     markDirty(); renderAll();
   }
 });
@@ -881,6 +912,22 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z') { e.preventDefault(); e.shiftKey?redo():undo(); return; }
   if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='y') { e.preventDefault(); redo(); return; }
   if (typing) return;
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='c' && selId) {
+    const obj = getSelObj();
+    if (obj && !obj.locked) { copiedObj = JSON.parse(JSON.stringify(obj)); toast('복사했습니다'); }
+    return;
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='v' && copiedObj) {
+    e.preventDefault();
+    pushHistory();
+    const o = JSON.parse(JSON.stringify(copiedObj));
+    o.id = newId(); o.x += 30; o.y += 30;
+    slides[curIdx].objs.push(o);
+    selId = o.id;
+    markDirty(); renderAll();
+    toast('붙여넣었습니다');
+    return;
+  }
   if (e.key==='Escape')  { endTextEdit(); clearSel(); return; }
   if ((e.key==='Delete'||e.key==='Backspace') && selId) { e.preventDefault(); deleteSelected(); return; }
   if (selId && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
