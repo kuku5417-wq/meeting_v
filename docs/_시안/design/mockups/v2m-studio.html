@@ -71,6 +71,12 @@ body{padding-left:0;height:100vh;overflow:hidden;display:grid;grid-template-rows
 .empty{padding:16px;color:var(--muted);font-size:var(--fs-2)}
 .keys{font-size:var(--fs-1);color:var(--muted);line-height:1.7}
 .keys kbd{font-family:var(--mono);background:var(--fill);border-radius:4px;padding:0 5px}
+.adj{display:grid;gap:8px}
+.adj label.f{display:grid;gap:3px;font-size:var(--fs-1);color:var(--fg)}
+.adj-row{display:flex;align-items:center;gap:6px}
+.adj-row input[type=range]{flex:1;accent-color:var(--accent)}
+.adj-val{font-family:var(--mono);font-size:var(--fs-1);color:var(--muted);min-width:38px;text-align:right}
+.adj textarea{width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:var(--fs-1);border:1px solid var(--sep);border-radius:6px;padding:6px 8px;background:var(--field);color:var(--fg)}
 @media (max-width:1200px){.studio{grid-template-columns:230px minmax(0,1fr) 280px}}
 @media (max-width:900px){body{height:auto;overflow:auto;grid-template-rows:auto auto}.tb{flex-wrap:wrap;padding:8px}.studio{grid-template-columns:minmax(0,1fr)}.canvas{min-height:60vh;padding:16px}}
 </style>
@@ -114,7 +120,7 @@ const LAST = ['ISS-2026-0001', 'PRB-2026-0001', 'ISS-2026-0020', 'PRB-2026-0018'
 const GROUPS = kind === 'dept' ? [['새 초안 — 초안 완료', mine.filter((d) => d.draft === 'ok' && !LAST.includes(d.id))], ['지난주 자료에 있던 것', mine.filter((d) => LAST.includes(d.id))], ['초안 작성 중 — 넣으면 경고만', mine.filter((d) => d.draft !== 'ok')]]
   : kind === 'share' ? [['종결 요청', ISSUES.filter((d) => d.st === 'req')], ['일정 임박 (D-14 이내)', ISSUES.filter((d) => d.dd !== null && d.dd <= 14 && d.st !== 'req')], ['그 밖의 열린 이슈', ISSUES.filter((d) => !(d.dd !== null && d.dd <= 14) && d.st !== 'req')]]
   : [['공유회 채택분', ISSUES.filter((d) => ['ISS-2026-0001', 'PRB-2026-0001', 'ISS-2026-0009'].includes(d.id))], ['중요 표시', ISSUES.filter((d) => d.important)], ['장기 미결 (4주 이상)', ISSUES.filter((d) => d.weeks >= 4 && !d.important)]];
-const mk = (d, src) => ({id: d.id, line: d.wk || d.last, form: K.form, tag: true, src});
+const mk = (d, src) => ({id: d.id, line: d.wk || d.last, form: K.form, tag: true, src, adj: {}});
 let items = [], sel = 0, zoom = 1, published = false, started = true;
 const multi = new Set();
 if (kind === 'dept')  items = GROUPS[1][1].map((d) => mk(d, '지난주')).concat(GROUPS[0][1].map((d) => mk(d, '새 초안')));
@@ -125,14 +131,19 @@ items.forEach((it) => { if (byId(it.id).sym && kind !== 'exec' && byId(it.id).de
 // 형태별 한 장(1920 좌표) — 요약 항목은 연결 이슈 목록
 function slide(it, n, total, title) {
   const d = byId(it.id), p = ptag(d), pre = p && it.tag ? `<b style="color:var(--t-decide)">[${esc(p)}]</b> ` : '';
+  const adj = it.adj || {};
+  const sc = (adj.textScale || 100) / 100;
+  const lh = (adj.lineHeight || 150) / 100;
+  const pad = adj.padding || 48;
+  const noteHtml = adj.note ? `<div style="font-size:${Math.round(24*sc)}px;margin-top:20px;padding:20px 24px;background:#f0f4f8;border-radius:12px;color:#3a4a5c">${esc(adj.note)}</div>` : '';
   const head = `<div class="sh"><span>${esc(title)}</span><span>${esc(it.ids ? '요약 · ' + it.ids.length + '건' : d.dept)}</span></div>`;
   const foot = `<div class="sf"><span>${n} / ${total} · ${esc(it.ids ? it.ids.map((x) => byId(x).hull).join('·') : d.hull ? d.hull + ' · ' + d.ev + (d.dd !== null ? ' D-' + d.dd : '') : '부서 현황')}</span><span>${esc(FORMS[it.form])}</span></div>`;
-  if (it.ids) return head + `<div class="sb"><div class="st1">${esc(it.line)}</div>${it.ids.map((x) => { const e = byId(x); return `<div class="li ${e.t}"><b>${esc(e.title)}</b>${esc(e.wk || e.last)}</div>`; }).join('')}</div>` + foot;
+  if (it.ids) return head + `<div class="sb" style="padding:${pad}px;line-height:${lh}"><div class="st1">${esc(it.line)}</div>${it.ids.map((x) => { const e = byId(x); return `<div class="li ${e.t}"><b>${esc(e.title)}</b>${esc(e.wk || e.last)}</div>`; }).join('')}${noteHtml}</div>` + foot;
   const t = `<div class="st1"><span class="lab" style="background:var(--t-${d.t})">${KIND[d.t]}</span>${esc(d.title)}</div>`;
   if (it.form === 'detail') return itemSlide({d, line: it.line}, n, total, null, title).replace(/<div style="font-size:30px">[^]*?<\/div>/, `<div style="font-size:30px">${pre}${esc(it.line)}</div>`);
-  if (it.form === 'photo') return head + `<div class="sb">${t}<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:32px"><div style="background:#e3e8ef;border-radius:16px;min-height:520px;display:grid;place-items:center;color:#5d6e86;font-size:30px">사진 · 마커</div><div style="display:grid;gap:20px;align-content:start;font-size:30px">${pre}${esc(it.line)}${d.dec ? `<div class="decide"><b>결정 필요</b> ${esc(d.dec)}</div>` : ''}</div></div></div>` + foot;
-  if (it.form === 'line') return head + `<div class="sb" style="align-content:center">${t}<div style="font-size:40px;line-height:1.4">${pre}${esc(it.line)}</div></div>` + foot;
-  return head + `<div class="sb">${t}<div style="display:grid;grid-template-columns:1fr 360px;gap:28px"><div style="display:grid;gap:16px;font-size:30px;align-content:start">${pre}${esc(it.line)}<div class="grid4"><div><b>담당</b>${esc(d.dept)}</div><div><b>상태</b>${d.st === 'req' ? '종결 요청' : '진행'}</div></div></div><div style="background:#e3e8ef;border-radius:16px;min-height:300px"></div></div>${d.dec ? `<div class="decide"><b>결정 필요</b> ${esc(d.dec)}</div>` : ''}</div>` + foot;
+  if (it.form === 'photo') { const imgSc=(adj.imgScale||100)/100, imgY=adj.imgOffsetY||0; return head + `<div class="sb" style="padding:${pad}px;line-height:${lh}">${t}<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:32px"><div style="overflow:hidden;background:#e3e8ef;border-radius:16px;min-height:520px;display:grid;place-items:center;color:#5d6e86;font-size:${Math.round(30*sc)}px"><div style="transform:scale(${imgSc}) translateY(${imgY}px);transform-origin:center">사진 · 마커</div></div><div style="display:grid;gap:20px;align-content:start;font-size:${Math.round(30*sc)}px">${pre}${esc(it.line)}${d.dec ? `<div class="decide"><b>결정 필요</b> ${esc(d.dec)}</div>` : ''}</div></div>${noteHtml}</div>` + foot; }
+  if (it.form === 'line') return head + `<div class="sb" style="align-content:center;padding:${pad}px">${t}<div style="font-size:${Math.round(40*sc)}px;line-height:${lh}">${pre}${esc(it.line)}</div>${noteHtml}</div>` + foot;
+  return head + `<div class="sb" style="padding:${pad}px;line-height:${lh}">${t}<div style="display:grid;grid-template-columns:1fr 360px;gap:28px"><div style="display:grid;gap:16px;font-size:${Math.round(30*sc)}px;align-content:start">${pre}${esc(it.line)}<div class="grid4"><div><b>담당</b>${esc(d.dept)}</div><div><b>상태</b>${d.st === 'req' ? '종결 요청' : '진행'}</div></div></div><div style="background:#e3e8ef;border-radius:16px;min-height:300px"></div></div>${d.dec ? `<div class="decide"><b>결정 필요</b> ${esc(d.dec)}</div>` : ''}${noteHtml}</div>` + foot;
 }
 const W = () => Math.round(560 * zoom);
 const frame = (html, label, cls, attrs) => `<div class="frame ${cls}" ${attrs} style="width:${W()}px"><span class="lbl">${label}</span><div class="stage-wrap"><div class="stage">${html}</div></div></div>`;
@@ -164,6 +175,15 @@ function renderLeft() {
   $('#nL').textContent = items.length + 1; $('#nC').textContent = nC;
 }
 const mini = (k) => ({detail: '<i></i><i class="s"></i><i class="b"></i><i class="b"></i>', card: '<i></i><i class="s"></i><i class="b" style="width:40%;justify-self:end;height:22px"></i>', photo: '<i></i><i class="b" style="height:30px;width:60%"></i>', line: '<i style="margin-top:12px"></i><i class="s"></i>'}[k]);
+function adjPanel(it) {
+  const a = it.adj || {};
+  const sl = (key, label, min, max, val, fmt) => `<label class="f">${label}<div class="adj-row"><input type="range" min="${min}" max="${max}" data-adj="${key}" value="${val}"><span class="adj-val">${fmt(val)}</span></div></label>`;
+  return sl('textScale','글씨 크기',50,150,a.textScale||100,v=>v+'%')
+    + sl('lineHeight','줄 간격',100,220,a.lineHeight||150,v=>(v/100).toFixed(1))
+    + sl('padding','여백',20,100,a.padding||48,v=>v+'px')
+    + (it.form==='photo' ? sl('imgScale','사진 크기',30,200,a.imgScale||100,v=>v+'%') + sl('imgOffsetY','사진 위치 ↕',-300,300,a.imgOffsetY||0,v=>(v>0?'+':'')+v+'px') : '')
+    + `<label class="f">추가 텍스트<textarea data-adj="note" rows="2" placeholder="이 장에만 추가할 텍스트">${esc(a.note||'')}</textarea></label>`;
+}
 const KEYS = '<div class="keys"><kbd>↑</kbd><kbd>↓</kbd> 장 고르기 · <kbd>1</kbd>~<kbd>4</kbd> 형태 · <kbd>Delete</kbd> 빼기 · <kbd>Ctrl</kbd>+<kbd>S</kbd> ' + K.main + '</div>';
 function renderProps() {
   if (multi.size >= 2) {
@@ -181,7 +201,9 @@ function renderProps() {
     <div class="prop"><span class="expr">이 자료에만 — 이슈는 그대로</span>${p ? `<button class="ptag" type="button" id="tag" aria-pressed="${it.tag}">[${esc(p)}]</button>` : ''}<label class="sr" for="ln">회의용 한 줄</label><input type="text" id="ln" value="${esc(it.line)}"></div>
     ${K.fact ? `<div class="sec-h">사실</div><div class="fact"><span class="lbl">고치면 이슈에 바로 반영 · 작성자 알림</span><label class="f">원인<input type="text" data-fact="cause" value="${esc(d.cause || '')}" placeholder="조사 중"></label><label class="f">조치 · 계획<input type="text" data-fact="act" value="${esc(d.act || '')}"></label><label class="f">결정 필요<input type="text" data-fact="dec" value="${esc(d.dec || '')}"></label></div>`
       : `<span class="small muted">사실 수정은 부서 자료나 이슈에서 — 여기서는 순서·형태·한 줄만</span>`}
-    <div class="row" style="margin-top:4px"><a class="btn sm gray" href="v2m-issue-desk.html?id=${d.id}">이슈 열기</a><button class="btn sm gray" type="button" id="drop">이 장 빼기</button></div>` + KEYS;
+    <div class="row" style="margin-top:4px"><a class="btn sm gray" href="v2m-issue-desk.html?id=${d.id}">이슈 열기</a><button class="btn sm gray" type="button" id="drop">이 장 빼기</button></div>
+    <div class="sec-h" style="margin-top:8px">미세 조정 — 이 장에만</div>
+    <div class="adj">${adjPanel(it)}</div>` + KEYS;
 }
 function state() {
   const n = items.length;
@@ -217,6 +239,14 @@ document.addEventListener('click', (e) => {
 document.addEventListener('input', (e) => {
   if (e.target.id === 'ln') { items[sel].line = e.target.value; renderCanvas(); }
   if (e.target.dataset.fact) { byId(items[sel].id)[e.target.dataset.fact] = e.target.value; renderCanvas(); $('#sub').textContent = `● ${items[sel].id} 이슈에 반영됨 · 작성자에게 알림`; }
+  if (e.target.dataset.adj) {
+    if (!items[sel].adj) items[sel].adj = {};
+    const key = e.target.dataset.adj;
+    items[sel].adj[key] = e.target.type === 'range' ? +e.target.value : e.target.value;
+    const valEl = e.target.closest('.adj-row')?.querySelector('.adj-val');
+    if (valEl) valEl.textContent = key === 'lineHeight' ? (+e.target.value/100).toFixed(1) : key === 'imgOffsetY' ? (e.target.value>0?'+':'')+e.target.value+'px' : key.endsWith('Scale') ? e.target.value+'%' : e.target.value+'px';
+    renderCanvas();
+  }
 });
 addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); main(); return; }
