@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>v2 와이드 이슈 — 시안</title>
+<link rel="stylesheet" href="../../app/static/css/fonts.css">
+<link rel="stylesheet" href="v2b.css">
+<link rel="stylesheet" href="v2m.css?v=2">
+<style>
+/* ── 와이드 3열: 목록+가져오기(380px) │ 편집(1fr) │ 1차 초안(340px) ──
+   분리 경계: 편집 열에는 「내용이 어떤가」만, 오른쪽 열에는 「결과가 어떻게 보이는가」만.
+   가져오기는 목록과 한 공간 — 이슈를 보며 바로 입력. */
+body{height:100vh;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.page{max-width:none;margin:0;padding:0;display:grid;grid-template-columns:380px minmax(0,1fr) 340px;min-height:0;overflow:hidden;gap:0;align-items:stretch}
+.list-col{overflow-y:auto;padding:12px 14px;display:grid;gap:10px;align-content:start;border-right:1px solid var(--sep)}
+.detail-col{overflow-y:auto;padding:12px 14px 80px;display:grid;gap:12px;align-content:start}
+.draft-col{overflow-y:auto;padding:12px 14px 80px;display:grid;gap:10px;align-content:start;background:var(--fill-2);border-left:1px solid var(--sep)}
+
+/* 목록 행 */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{font:inherit;font-size:var(--fs-2);font-weight:500;min-height:30px;padding:0 12px;border:0;border-radius:999px;background:var(--fill);color:var(--fg);cursor:pointer}
+.fchip[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.r{grid-template-columns:auto minmax(0,1fr) auto;align-items:start}
+.r input[type=checkbox]{margin-top:4px;width:18px;height:18px;accent-color:var(--accent)}
+.r .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r .right{display:grid;justify-items:end;gap:2px}
+.bulk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px;border-radius:var(--r);background:var(--accent-soft)}
+.bulk select{width:auto;min-height:36px;padding:4px 10px;font-size:var(--fs-2);background:var(--surface)}
+
+/* 편집 */
+.head input#dTitle{font-size:var(--fs-5);font-weight:700;background:none;padding:0;min-height:0;letter-spacing:-.01em}
+.head input#dTitle:focus{background:var(--surface);padding:4px 8px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.decide-f{color:var(--t-decide)}
+.decide-f input{background:var(--decide-soft)}
+.maps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:-14px}
+.mp{display:grid;gap:2px;padding:10px 14px;position:relative}
+.mp+.mp::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:1px;background:var(--sep)}
+.mp .k{font-size:var(--fs-1);color:var(--muted);font-weight:600}
+.mp button{font:inherit;font-weight:600;color:var(--t-issue);background:var(--warn-soft);border:0;border-radius:8px;padding:4px 10px;cursor:pointer;justify-self:start;min-height:36px}
+.att{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
+.photo{width:160px;aspect-ratio:4/3;border-radius:10px;background:#c9d3d8;display:grid;align-items:end;padding:8px;font-size:var(--fs-1);color:#111114}
+.add-att{display:grid;gap:8px;align-content:center;justify-items:start;padding:10px 14px;border-radius:10px;background:var(--fill-2);min-width:180px}
+
+/* 가져오기 미니 패널 */
+.imp{display:grid;gap:8px;padding:12px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow)}
+.imp-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.imp textarea{min-height:80px;resize:none;font-size:var(--fs-2)}
+.mail-item{padding:7px 10px;cursor:pointer;border-radius:8px;display:grid;gap:1px}
+.mail-item:hover{background:var(--fill-2)}
+.drop-zone{border:2px dashed var(--sep);border-radius:8px;padding:20px 12px;text-align:center;cursor:pointer;display:grid;gap:6px;justify-items:center;background:var(--fill-2)}
+.drop-zone:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+/* 1차 초안 열 */
+.draft-ph{display:flex;align-items:baseline;gap:8px}
+.used-list{display:grid;gap:4px;font-size:var(--fs-2)}
+.case-item{display:grid;gap:4px;font-size:var(--fs-2);padding:10px 12px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
+
+/* 반응형 — 1100px 이하: 2열(초안 열 숨김), 800px 이하: 1열(목록 최소화) */
+@media(max-width:1400px){.page{grid-template-columns:340px minmax(0,1fr) 300px}}
+@media(max-width:1100px){.page{grid-template-columns:340px minmax(0,1fr)}.draft-col{display:none}}
+@media(max-width:800px){.page{grid-template-columns:minmax(0,1fr)}.list-col{max-height:280px;border-right:0;border-bottom:1px solid var(--sep)}}
+@media(max-width:640px){.g4{grid-template-columns:1fr 1fr}.f3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">회의·지식</span>
+  <nav class="nav" aria-label="메뉴">
+    <a href="v2m-home.html">홈</a>
+    <a href="v2w-issue-desk.html" aria-current="page">이슈</a>
+    <a href="v2m-meetings.html">회의</a>
+    <a href="v2-metrics.html">지표</a>
+    <a href="#">지식창고</a>
+    <a href="#">장비 허브</a>
+  </nav>
+  <div class="right"><span>시운전1부</span><a href="v2m-issue-desk.html">기존 2열</a></div>
+</header>
+
+<details class="note" style="padding:6px 20px"><summary>시안 설명 — 와이드 3열 이슈</summary>
+  <b>분리 원칙</b> — 편집(가운데): 「내용이 맞는가」만. 1차 초안(오른쪽): 「슬라이드에 어떻게 보이는가」만. 가져오기: 이슈 목록과 같은 공간, 별도 화면 없이.
+  1100px 이하: 초안 열 숨김 · 800px 이하: 목록 접힘.
+</details>
+
+<main class="page">
+
+  <!-- ──────────────────────────────────────────────────
+       열 1: 이슈 목록 + 가져오기 미니 패널
+  ────────────────────────────────────────────────── -->
+  <section class="list-col" aria-labelledby="lH">
+    <div class="ph"><h1 id="lH">이슈</h1></div>
+    <label class="sr" for="q">찾기</label>
+    <input id="q" type="search" placeholder="찾기 — 2511 DG2 · 카고펌프">
+    <div class="row">
+      <select id="fDept" aria-label="부서" style="width:auto">
+        <option value="시운전1부">내 부서 · 시운전1부</option>
+        <option value="">전 부서</option>
+      </select>
+    </div>
+    <div class="chips" role="group" aria-label="걸러 보기" id="fc"></div>
+    <div class="bulk" id="bulk" hidden>
+      <b class="small" id="bN"></b>
+      <label class="sr" for="toM">넣을 회의자료</label>
+      <select id="toM">
+        <option>W43 시운전1부 회의자료</option>
+        <option>W43 부서 현안 공유회</option>
+        <option>W43 팀장 정보회의</option>
+        <option>SN2511 호선별 회의</option>
+      </select>
+      <button class="btn sm primary" type="button" id="adopt">회의자료에 넣기</button>
+      <button class="btn sm gray" type="button" data-bulk="담당 부서 바꾸기">부서</button>
+      <button class="btn sm gray" type="button" data-bulk="상태 바꾸기">상태</button>
+    </div>
+    <div class="group" id="rows"></div>
+
+    <!-- 가져오기 미니 패널 — 이슈를 보며 바로 입력 -->
+    <div class="imp">
+      <div class="imp-row">
+        <b class="small" style="color:var(--muted)">새 이슈 가져오기</b>
+        <div class="seg" id="impSeg" role="tablist">
+          <button type="button" aria-pressed="true"  data-src="memo">메모</button>
+          <button type="button" aria-pressed="false" data-src="mail">메일</button>
+          <button type="button" aria-pressed="false" data-src="file">파일</button>
+        </div>
+      </div>
+
+      <!-- 메모 탭 -->
+      <div id="srcMemo">
+        <label class="f sr" for="memoTx">메모 붙여넣기</label>
+        <textarea id="memoTx" placeholder="메모·현장 기록 붙여넣기 — AI가 이슈 항목으로 분리합니다&#10;Ctrl+V"></textarea>
+        <button class="btn primary" type="button" style="width:100%" data-imp-action="extract">추출하기</button>
+      </div>
+
+      <!-- 메일 탭 -->
+      <div id="srcMail" hidden>
+        <input type="search" placeholder="제목·발신자로 찾기" style="margin-bottom:6px">
+        <div style="display:grid;gap:2px">
+          <div class="mail-item" data-imp-action="mail-item">
+            <b class="small">SN2511 DG2 배기온도 이상 — 연료밸브 교체 지연 건</b>
+            <span class="meta">시운전기술·박기사 · 어제 15:22</span>
+          </div>
+          <div class="mail-item" data-imp-action="mail-item">
+            <b class="small">카고펌프 씰 교체 완료 보고 (SN2514)</b>
+            <span class="meta">시운전1부·이기사 · 2일 전 09:11</span>
+          </div>
+          <div class="mail-item" data-imp-action="mail-item">
+            <b class="small">SN2514 조타기 선급 검사 일정 변경 안내</b>
+            <span class="meta">선급 협의팀 · 3일 전</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 파일 탭 -->
+      <div id="srcFile" hidden>
+        <div class="drop-zone" data-imp-action="file">
+          <b class="small">PPT · HTML 파일</b>
+          <span class="small muted">끌어다 놓기 또는 클릭해서 고르기</span>
+          <span class="small muted">장마다 AI 추출 → 연결 / 새 이슈 / 건너뛰기</span>
+          <button class="btn sm gray" type="button">파일 고르기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────
+       열 2: 이슈 편집 — 「내용이 맞는가」만
+       1차 초안 섹션 없음 — 오른쪽 열에서 실시간으로 본다
+  ────────────────────────────────────────────────── -->
+  <section class="detail-col" aria-labelledby="dTitle" id="detail">
+    <div class="head">
+      <div class="row">
+        <span class="tl" id="dKind"></span>
+        <span class="id" id="dId"></span>
+        <span class="st" id="dSt"></span>
+        <span class="small muted" id="dDraft"></span>
+      </div>
+      <label class="sr" for="dTitle">제목</label>
+      <input id="dTitle" type="text">
+    </div>
+
+    <div class="sec-h">기본</div>
+    <div class="panel">
+      <div class="g4">
+        <label class="f">상태
+          <select id="fSt">
+            <option value="go">진행</option>
+            <option value="new">신규</option>
+            <option value="req">종결 요청</option>
+            <option value="post">게시</option>
+          </select>
+        </label>
+        <label class="f">호선 · 다음 일정<input id="fHull" type="text" readonly></label>
+        <label class="f">장비<input id="fEq" type="text"></label>
+        <label class="f">이번 주 한 줄<input id="fWk" type="text" placeholder="비어 있음 — 이번 주 진행"></label>
+      </div>
+    </div>
+
+    <div class="sec-h">내용 — 이 세 칸이 오른쪽 1차 초안 「상세 한 장」이 됩니다</div>
+    <div class="panel">
+      <div class="f3">
+        <label class="f">현상<textarea id="fSym"></textarea></label>
+        <label class="f">원인<textarea id="fCause" placeholder="모르면 비워 두세요 — 「조사 중」으로 나갑니다"></textarea></label>
+        <label class="f">조치 · 계획<textarea id="fAct"></textarea></label>
+      </div>
+      <label class="f decide-f">결정 필요 — 회의에서 정할 것(없으면 비움)
+        <input id="fDec" type="text">
+      </label>
+    </div>
+
+    <div class="sec-h">지식 매핑 <span class="map" id="mN"></span> — 비어도 회의에는 지장 없음. 유사 사례·장비 허브용</div>
+    <div class="panel">
+      <div class="maps" id="maps"></div>
+    </div>
+
+    <div class="sec-h">붙인 것</div>
+    <div class="panel">
+      <div class="att">
+        <div class="photo">[조치 전] 3번 실린더</div>
+        <div class="add-att">
+          <b class="small">＋ 붙이기</b>
+          <span class="small muted">사진은 끌어다 놓기 · Ctrl+V</span>
+          <div class="row">
+            <button class="btn sm gray" type="button" data-att="표">표</button>
+            <button class="btn sm gray" type="button" data-att="계획 대비 실적">계획 대비 실적</button>
+            <button class="btn sm gray" type="button" data-att="호선 비교">호선 비교</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────
+       열 3: 1차 초안 — 「슬라이드에 어떻게 보이는가」만
+       편집 열 내용이 고쳐질 때마다 실시간 반영
+  ────────────────────────────────────────────────── -->
+  <section class="draft-col" aria-label="1차 초안">
+    <div class="draft-ph">
+      <h2 style="font-size:var(--fs-4);color:#1c2f4f">1차 초안</h2>
+      <span class="small muted">칸 고치면 실시간 반영</span>
+    </div>
+
+    <div class="panel">
+      <div class="stage-wrap"><div class="stage" id="stg"></div></div>
+      <span class="small muted">형태는 회의자료 스튜디오에서 바꿉니다 →
+        <a href="v2w-studio.html?kind=dept">스튜디오</a>
+      </span>
+    </div>
+
+    <div class="sec-h">들어간 회의자료</div>
+    <div class="panel">
+      <div class="used-list" id="used"></div>
+    </div>
+
+    <div class="sec-h">유사 사례</div>
+    <div class="case-item">
+      <div class="row" style="gap:6px">
+        <a href="#" class="small">CASE-0298</a>
+        <span class="tl issue" style="font-size:11px">자매선 SN2510</span>
+      </div>
+      <span class="small">발전기 No.2 — 분사밸브 노즐 마모 → 교체</span>
+      <span class="small muted">SN2510 같은 174K · 시리즈 1번선 · 3주 전 종결</span>
+    </div>
+    <div class="case-item">
+      <div class="row" style="gap:6px">
+        <a href="#" class="small">CASE-0241</a>
+        <span class="tl issue" style="font-size:11px">동형선 SN2402</span>
+      </div>
+      <span class="small">발전기 No.1 — 분사밸브 연료 누유 → 패킹 교체</span>
+      <span class="small muted">동형 174K 단독선 · 1년 전 종결</span>
+    </div>
+    <div class="case-item">
+      <div class="row" style="gap:6px">
+        <a href="#" class="small">CASE-0187</a>
+        <span class="tl issue" style="font-size:11px">타 선종 CONT SN2620</span>
+      </div>
+      <span class="small">발전기 — 연료 압력 편차 → 필터 막힘 판정</span>
+      <span class="small muted">증상 패턴 유사(배기온도 편차 선행) · 모델 다름</span>
+    </div>
+  </section>
+
+</main>
+
+<div class="actbar">
+  <span class="state" id="save">저장됨</span>
+  <span class="keys"><kbd>J</kbd>/<kbd>K</kbd> 다음·이전 이슈 · <kbd>Ctrl</kbd>+<kbd>S</kbd> 초안 완료</span>
+  <button class="btn gray" type="button" id="reqClose">종결 요청</button>
+  <button class="btn primary" type="button" id="primary"></button>
+</div>
+
+<script type="module">
+import {$, $$, esc, toast, keys, fitStages} from './v2b.js';
+import {ISSUES, KIND, ST} from './v2b-data.js';
+
+const qs = new URLSearchParams(location.search);
+const F = {dept: '시운전1부', chip: '', q: ''};
+const sel = new Set();
+const used = {'ISS-2026-0001': ['W43 부서 현안 공유회'], 'PRB-2026-0001': ['W43 부서 현안 공유회']};
+let cur = qs.get('id') || ISSUES[0].id;
+
+const CHIPS = [
+  ['draft', '초안 미완료', (d) => d.draft !== 'ok'],
+  ['line',  '한 줄 없음',  (d) => !d.wk && d.st !== 'post'],
+  ['map',   '매핑 빈 곳',  (d) => d.map < 5],
+  ['soon',  '일정 임박',   (d) => d.dd !== null && d.dd <= 14],
+];
+if (qs.get('f')) F.chip = qs.get('f');
+
+const vis = () => ISSUES.filter((d) =>
+  (!F.dept || d.dept === F.dept) &&
+  (!F.chip || CHIPS.find((c) => c[0] === F.chip)[2](d)) &&
+  (!F.q || (d.title + d.raw + d.hull + d.id).toLowerCase().includes(F.q.toLowerCase()))
+);
+
+function renderList() {
+  const base = ISSUES.filter((d) => !F.dept || d.dept === F.dept);
+  $('#fc').innerHTML = CHIPS.map(([k, l, f]) =>
+    `<button class="fchip" type="button" data-chip="${k}" aria-pressed="${F.chip === k}">${l} ${base.filter(f).length}</button>`
+  ).join('');
+  $('#rows').innerHTML = vis().map((d) => `<div class="cell tap r ${d.id === cur ? 'on' : ''}" data-id="${d.id}">
+    <input type="checkbox" data-sel="${d.id}" ${sel.has(d.id) ? 'checked' : ''} aria-label="${d.id} 고르기">
+    <div style="min-width:0;display:grid;gap:2px">
+      <span class="t"><span class="tl ${d.t}">${KIND[d.t]}</span> ${esc(d.title)}</span>
+      <span class="meta"><span class="id">${d.id}</span><span class="dd ${d.dd !== null && d.dd <= 14 ? 'soon' : ''}">${d.hull} · ${esc(d.ev)}${d.dd !== null ? ' D-' + d.dd : ''}</span>${d.wk ? '' : '<span class="st late">한 줄 없음</span>'}</span>
+    </div>
+    <div class="right">
+      <span class="st ${ST[d.st][0]}">${ST[d.st][1]}</span>
+      <span class="map ${d.map < 5 ? 'gap' : ''}">매핑 ${d.map}/5</span>
+      ${d.draft === 'ok' ? '<span class="st done">초안</span>' : `<span class="small muted">초안 ${d.draft === 'wip' ? '작성 중' : '없음'}</span>`}
+    </div>
+  </div>`).join('') || '<div class="empty">조건에 맞는 이슈가 없습니다</div>';
+  $('#bulk').hidden = !sel.size;
+  $('#bN').textContent = `고른 이슈 ${sel.size}건`;
+}
+
+const MAPK = ['호선', '장비', '부위', '증상', '원인'];
+
+function renderDetail() {
+  const d = ISSUES.find((x) => x.id === cur);
+  $('#dKind').className = `tl ${d.t}`; $('#dKind').textContent = KIND[d.t];
+  $('#dId').textContent = d.id;
+  $('#dSt').className = `st ${ST[d.st][0]}`; $('#dSt').textContent = ST[d.st][1];
+  $('#dDraft').textContent = d.draft === 'ok' ? '· 1차 초안 완료' : `· 1차 초안 ${d.draft === 'wip' ? '작성 중' : '없음'}`;
+  $('#dTitle').value = d.title;
+  $('#fSt').value = d.st;
+  $('#fHull').value = `${d.hull} · ${d.ev}${d.dd !== null ? ' D-' + d.dd : ''}`;
+  $('#fEq').value = d.eq ? `${d.eq} ← ${d.raw}` : `미등록 ← ${d.raw}`;
+  $('#fWk').value = d.wk;
+  $('#fSym').value = d.sym || '';
+  $('#fCause').value = d.cause || '';
+  $('#fAct').value = d.act || '';
+  $('#fDec').value = d.dec || '';
+  $('#maps').innerHTML = MAPK.map((k, i) => i < d.map
+    ? `<div class="mp"><span class="k">${k}</span>${esc([d.hull, d.eq || d.raw, '연소·배기', '배기온도 편차', '분사밸브'][i])}</div>`
+    : `<div class="mp gap"><span class="k">${k}</span><button type="button" data-map="${k}">＋ 고르기</button></div>`
+  ).join('');
+  $('#mN').textContent = `${d.map}/5`;
+  $('#mN').className = 'map' + (d.map < 5 ? ' gap' : '');
+  $('#used').innerHTML = (used[d.id] || []).map((m) => `<span>· ${esc(m)}</span>`).join('')
+    || '<span class="muted">아직 없음 — 왼쪽 목록에서 여러 개 골라 회의자료에 넣기</span>';
+  $('#primary').textContent = d.draft === 'ok' ? '다음 이슈 →' : '초안 완료 → 다음 초안';
+  $('#reqClose').hidden = d.st === 'req' || d.t === 'share';
+  drawStage();
+  renderList();
+}
+
+function drawStage() {
+  const d = ISSUES.find((x) => x.id === cur), v = (id) => esc($(id).value.trim());
+  $('#stg').innerHTML = `<div class="sh"><span>${d.dept}</span><span class="mono">${d.id}</span></div>
+    <div class="sb">
+      <div class="st1"><span class="lab" style="background:var(--t-${d.t})">${KIND[d.t]}</span>${v('#dTitle')}</div>
+      <div class="grid4">
+        <div><b>현상</b>${v('#fSym') || '—'}</div>
+        <div><b>원인</b>${v('#fCause') || '조사 중'}</div>
+        <div><b>조치 · 계획</b>${v('#fAct') || '—'}</div>
+        <div><b>이번 주</b>${v('#fWk') || '—'}</div>
+      </div>
+      ${v('#fDec') ? `<div class="decide"><b>결정 필요</b> ${v('#fDec')}</div>` : ''}
+    </div>
+    <div class="sf"><span>${d.hull} · ${esc(d.ev)}${d.dd !== null ? ' D-' + d.dd : ''}</span><span>1차 초안 · 시운전1부</span></div>`;
+  fitStages();
+}
+
+// 자동 저장
+let saveTimer;
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'q') { F.q = e.target.value; renderList(); return; }
+  if (!e.target.closest('#detail')) return;
+  const d = ISSUES.find((x) => x.id === cur);
+  const m = {dTitle: 'title', fWk: 'wk', fSym: 'sym', fCause: 'cause', fAct: 'act', fDec: 'dec'}[e.target.id];
+  if (m) d[m] = e.target.value;
+  if (d.draft === 'none') d.draft = 'wip';
+  $('#save').textContent = '저장 중…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { $('#save').textContent = '저장됨 · 방금'; renderList(); }, 500);
+  drawStage();
+});
+
+function go(step) {
+  const xs = vis(), i = xs.findIndex((d) => d.id === cur);
+  const n = xs[(i + step + xs.length) % xs.length];
+  if (n) { cur = n.id; renderDetail(); }
+}
+
+function primary() {
+  const d = ISSUES.find((x) => x.id === cur);
+  if (d.draft === 'ok') return go(1);
+  const before = d.draft; d.draft = 'ok';
+  const next = ISSUES.find((x) => x.dept === d.dept && x.draft !== 'ok');
+  toast(`${d.id} 초안 완료 — 부서 자료 후보에 올라갑니다`, () => { d.draft = before; cur = d.id; renderDetail(); });
+  if (next) { cur = next.id; renderDetail(); $('#dTitle').focus(); }
+  else { renderDetail(); toast('초안이 남은 이슈가 없습니다 — 홈으로 돌아가도 됩니다'); }
+}
+
+$('#primary').onclick = primary;
+$('#reqClose').onclick = () => {
+  const d = ISSUES.find((x) => x.id === cur);
+  if (!$('#fAct').value.trim()) { toast('종결 요청에는 「조치 · 계획」이 필요합니다'); $('#fAct').focus(); return; }
+  const b = d.st; d.st = 'req'; renderDetail();
+  toast('종결 요청했습니다 — 부서 현안 공유회에서 승인됩니다', () => { d.st = b; renderDetail(); });
+};
+
+document.addEventListener('click', (e) => {
+  // 이슈 목록 행
+  const r = e.target.closest('.r[data-id]');
+  if (r && !e.target.closest('input')) { cur = r.dataset.id; renderDetail(); return; }
+  // 필터 칩
+  const c = e.target.closest('[data-chip]');
+  if (c) { F.chip = F.chip === c.dataset.chip ? '' : c.dataset.chip; renderList(); return; }
+  // 일괄
+  const b = e.target.closest('[data-bulk]');
+  if (b) { toast(`고른 ${sel.size}건 「${b.dataset.bulk}」 — 이력과 작성자 알림으로 남습니다`); return; }
+  // 붙인 것
+  const a = e.target.closest('[data-att]');
+  if (a) { toast(`「${a.dataset.att}」 입력 칸이 이 자리에 열립니다(시안)`); return; }
+  // 매핑
+  const mp = e.target.closest('[data-map]');
+  if (mp) { toast(`「${mp.dataset.map}」 고르기 — 현장 표기로 찾아 연결하면 별칭 사전에 남습니다(시안)`); return; }
+  // 가져오기 탭 전환
+  const impBtn = e.target.closest('[data-src]');
+  if (impBtn?.closest('#impSeg')) {
+    $$('#impSeg [data-src]').forEach((bt) => bt.setAttribute('aria-pressed', 'false'));
+    impBtn.setAttribute('aria-pressed', 'true');
+    const s = impBtn.dataset.src;
+    $('#srcMemo').hidden = s !== 'memo';
+    $('#srcMail').hidden = s !== 'mail';
+    $('#srcFile').hidden = s !== 'file';
+    return;
+  }
+  // 가져오기 액션
+  const ia = e.target.closest('[data-imp-action]');
+  if (ia) {
+    const act = ia.dataset.impAction;
+    if (act === 'extract') toast('메모에서 이슈 항목 추출 중 — AI가 항목으로 분리합니다(시안)');
+    else if (act === 'mail-item') toast('메일에서 이슈 조각 추출 중 — 연결 / 새 이슈 / 건너뛰기를 고릅니다(시안)');
+    else if (act === 'file') toast('파일을 선택하면 장마다 AI가 추출합니다(시안)');
+    return;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target.matches('[data-sel]')) {
+    e.target.checked ? sel.add(e.target.dataset.sel) : sel.delete(e.target.dataset.sel);
+    renderList();
+  }
+  if (e.target.id === 'fDept') { F.dept = e.target.value; renderList(); }
+});
+
+$('#adopt').onclick = () => {
+  const m = $('#toM').value, ids = [...sel];
+  ids.forEach((id) => (used[id] = [...new Set([...(used[id] || []), m])]));
+  sel.clear(); renderDetail();
+  toast(`${ids.length}건을 「${m}」에 넣었습니다`, () => {
+    ids.forEach((id) => (used[id] = used[id].filter((x) => x !== m)));
+    renderDetail();
+  });
+};
+
+keys({next: () => go(1), prev: () => go(-1), save: primary});
+renderDetail();
+</script>
+</body>
+</html>
