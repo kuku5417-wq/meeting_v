@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "meeting-app",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "streamlit", "run", "app.py", "--server.port", "8501", "--server.headless", "true"],
+      "port": 8501
+    },
+    {
       "name": "mockups-static",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "4173", "--directory", "docs/_시안/design/mockups"],

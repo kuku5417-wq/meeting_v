@@ -1,0 +1,28 @@
+[project]
+name = "meeting-v"
+version = "0.1.0"
+description = "커미셔닝팀 주간 회의자료·지식화 (사외망 작업본)"
+requires-python = ">=3.11"
+
+# 필수 — diagnostics/check_libs.py 의 REQUIRED 와 같아야 한다.
+dependencies = [
+    "streamlit>=1.40",
+    "sqlalchemy>=2.0",
+    "pandas>=2.2",
+    "python-pptx>=1.0",
+]
+
+# 선택 — 사외망에서 설치가 막힐 수 있다. 없으면 code-gen.md §4⑦ 강등 경로를 쓴다.
+# 설치: uv sync --extra ui
+[project.optional-dependencies]
+ui = [
+    "streamlit-aggrid>=1.0",
+    "streamlit-drawable-canvas>=0.9",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

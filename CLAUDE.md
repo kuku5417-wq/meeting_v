@@ -78,11 +78,11 @@ uv run streamlit run app.py --server.port 8501
 ```
 
 ```bash
-python -X utf8 diagnostics/check_data.py; echo "EXIT=$?"
+uv run python -X utf8 diagnostics/check_data.py; echo "EXIT=$?"
 ```
 
 ```bash
-cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
+cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 ```
 
 ```bash
@@ -93,7 +93,7 @@ node .claude/hooks/guard-test.js
 python .claude/tools/roadmap.py update
 ```
 
-**`python -X utf8`을 빼지 않는다.** 빼면 Windows 콘솔(cp949)에서 한글이 `ȣ�� 24��`처럼 깨진다.
+**`-X utf8` 을 빼지 않는다.** 빼면 Windows 콘솔(cp949)에서 한글이 `ȣ�� 24��`처럼 깨진다.
 
 ## 6. 꼭 지킬 원칙 (도메인 규칙)
 

@@ -6,14 +6,14 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 34%** (11/32) ███░░░░░░░
+**전체 진행율 38%** (12/32) ████░░░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
 |---|---|---|---|
 | P0. 정본 정리 | 5/8 | 62% | ██████░░░░ |
 | P1. 안전장치 (3일차 교육 적용) | 5/6 | 83% | ████████░░ |
-| P2. 기반 | 1/5 | 20% | ██░░░░░░░░ |
+| P2. 기반 | 2/5 | 40% | ████░░░░░░ |
 | P3. 화면 | 0/7 | 0% | ░░░░░░░░░░ |
 | P4. 검증 | 0/3 | 0% | ░░░░░░░░░░ |
 | P5. 사내망 고정본 | 0/3 | 0% | ░░░░░░░░░░ |
@@ -21,8 +21,8 @@
 
 ## 다음 할 일
 
-1. **P2 S0** — 골격·설정 7개 파일. `pyproject.toml`에 `streamlit`·`sqlalchemy`·`pandas`·`python-pptx`를 넣고 `uv sync` 하면 `check_libs.py`가 `EXIT=0`이 된다 (지금은 필수 3개가 안 깔려 `EXIT=1`이고, 그게 S0 전 정상 상태다). 상세는 "P2 단계별 상세 — S0" 절.
-2. **P0 미결 확정** — `SPEC.md` §9 4건(모델 약호·분해 수준·`series_no` 기준·단계 어휘)은 **S1 모델 선언 전에** 정해지는 편이 좋다. 표 칸에 직접 걸린다.
+1. **P0 미결 확정 — S1 전에 해야 한다.** `SPEC.md` §9 4건(모델 약호·분해 수준·`series_no` 기준·단계 어휘)이 `modules/models.py`의 표 칸에 직접 걸린다. 업무 결정이라 사람이 정해야 한다.
+2. **P2 S1** — 기준정보 15표 선언. CSV 헤더가 칸 이름의 정본이고, `hull`은 12칸, `ship_model`은 신설이다. 상세는 "P2 단계별 상세 — S1" 절.
 3. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다.
 
 ## 갱신 규칙
@@ -39,9 +39,9 @@
 
 | | 항목 |
 |---|---|
-| **있다** | `SPEC.md`(호선 기준정보 4층·`stage` 5종·검증 7규칙), `requirements.md`(기준정보 15표·v2e-studio 운영 3표·F5~F11), `data/samples/masters/` CSV 15종 112행 + `_check.py`, `docs/_시안/`(시안 HTML·README 명세), `.claude/agents/` 3종(`spec-writer`·`code-gen`·`spec-guard`), **안전장치**(`.gitignore`·권한 규칙·가드 훅·`roadmap.py`), **`CLAUDE.md`**(도메인 원칙 9개·용어·폴더 구조), **`diagnostics/` 4종** |
-| **없다** | **코드 전부** — `app.py`·`config/`·`modules/`·`views/` 아무것도 없음. 라이브러리도 안 깔림(`streamlit`·`sqlalchemy`·`pandas` 없음 → S0에서 `uv sync`) |
-| **커밋 안 됨** | `CLAUDE.md`, `diagnostics/` (이 단계 커밋 대상) |
+| **있다** | `SPEC.md`(호선 기준정보 4층·`stage` 5종·검증 7규칙), `requirements.md`(기준정보 15표·v2e-studio 운영 3표·F5~F11), `data/samples/masters/` CSV 15종 112행 + `_check.py`, `docs/_시안/`(시안 HTML·README 명세), `.claude/agents/` 3종(`spec-writer`·`code-gen`·`spec-guard`), **안전장치**(`.gitignore`·권한 규칙·가드 훅·`roadmap.py`), **`CLAUDE.md`**(도메인 원칙 9개·용어·폴더 구조), **`diagnostics/` 4종**, **S0 골격**(`app.py`·`config/`·`.streamlit/`·`pyproject.toml`) + `.venv`(streamlit 1.67·sqlalchemy 2.1·pandas 3.1·python-pptx 1.0) |
+| **없다** | `modules/`(모델·DB·시드·LLM), `views/`(화면) — S1 이후. 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(없어도 통과, 강등 경로를 쓴다) |
+| **커밋 안 됨** | S0 산출물 7개 + `uv.lock`, `.claude/launch.json` 갱신분 (이 단계 커밋 대상) |
 
 ## 흐름
 
@@ -75,7 +75,7 @@ flowchart LR
 ### P2. 기반
 
 - [x] S-1 문서·검증 기반 (`CLAUDE.md` + `diagnostics/` 4종) — 진단 4개 크래시 없이 끝남, `check_data` `EXIT=0`
-- [ ] S0 골격·설정 (Streamlit 앱이 뜬다)
+- [x] S0 골격·설정 (Streamlit 앱이 뜬다) — `check_libs` `EXIT=0`, 앱이 8501에서 떠서 빈 홈이 보임
 - [ ] S1 모델 (기준정보 15표 선언)
 - [ ] S2 DB·시드 (15표 112행이 DB에 올라간다, `ensure_sn`)
 - [ ] S3 LLM (`modules/llm_client.py`)
@@ -134,7 +134,7 @@ flowchart LR
 **완료 판정**
 
 ```bash
-for f in diagnostics/check_*.py; do python -X utf8 "$f"; echo "$f EXIT=$?"; done
+for f in diagnostics/check_*.py; do uv run python -X utf8 "$f"; echo "$f EXIT=$?"; done
 ```
 
 4개 모두 크래시 없이 끝나고 `check_data.py`가 `EXIT=0`. (`check_db.py`는 이 단계에선 "모델 없음"으로 비정상 종료가 정상)
@@ -159,11 +159,11 @@ for f in diagnostics/check_*.py; do python -X utf8 "$f"; echo "$f EXIT=$?"; done
 **완료 판정**
 
 ```bash
-python -X utf8 -c "import config.settings, config.paths"
+uv run python -X utf8 -c "import config.settings, config.paths"
 ```
 
 ```bash
-python -X utf8 diagnostics/check_libs.py; echo "EXIT=$?"
+uv run python -X utf8 diagnostics/check_libs.py; echo "EXIT=$?"
 ```
 
 ```bash
@@ -196,11 +196,11 @@ import 통과 + `check_libs.py` `EXIT=0` + 앱이 떠서 빈 홈이 보인다. �
 **완료 판정**
 
 ```bash
-python -X utf8 -c "import modules.models"
+uv run python -X utf8 -c "import modules.models"
 ```
 
 ```bash
-python -X utf8 -c "import modules.models as m; print(len(m.Base.metadata.tables))"
+uv run python -X utf8 -c "import modules.models as m; print(len(m.Base.metadata.tables))"
 ```
 
 import 통과 + 선언된 테이블 수가 **15**.
@@ -228,15 +228,15 @@ test_item, symptom_code, cause_code, alias
 **완료 판정**
 
 ```bash
-python -X utf8 diagnostics/check_data.py; echo "EXIT=$?"
+uv run python -X utf8 diagnostics/check_data.py; echo "EXIT=$?"
 ```
 
 ```bash
-python -X utf8 diagnostics/check_db.py; echo "EXIT=$?"
+uv run python -X utf8 diagnostics/check_db.py; echo "EXIT=$?"
 ```
 
 ```bash
-cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
+cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 ```
 
 셋 다 `EXIT=0` + DB 행 수가 CSV와 일치:
@@ -274,6 +274,7 @@ cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | `ROADMAP.md` 재작성 — P0~P5 체계로 전환, 기존 `roadmap.md` 삭제 | `roadmap.py update`·`brief`·`check` 전부 EXIT=0 | `d464b6b` |
 | 2026-11-12 | P0 | `main` push — `origin/main`을 `bdebcc9` → `1f83269`로 올림. 미push였던 이전 3커밋 포함 | 올라간 파일 24개 점검, 비밀·원본 데이터 없음 (샘플 CSV는 가상값) | `1f83269` |
 | 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 112행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | `823c6a3` |
+| 2026-11-12 | P2 S0 | 골격·설정 7개 + `config/__init__.py` 신설, `uv sync`로 의존성 설치, `.claude/launch.json`에 앱 설정 추가 | `import config.settings, config.paths` EXIT=0 / `check_libs` **EXIT=0** (streamlit 1.67.0·sqlalchemy 2.1.8·pandas 3.1.1·python-pptx 1.0.2) / 앱이 8501에서 떠서 빈 홈 표시, 콘솔 오류 없음 / 사이드바에 기준정보 CSV 15장·DB 없음·LLM 없음이 창구를 거쳐 나옴 | |
 
 ## 추가·변경 기록
 
@@ -285,6 +286,9 @@ cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | **S 단계 체계 → P0~P5 체계로 전환**, 파일명 `roadmap.md` → `ROADMAP.md` | `.claude/tools/roadmap.py`가 `### P<숫자>.` 제목과 `- [x]` 체크박스만 센다. 기존 `⬜🔄✅` 표기는 단계 0개로 읽혀 진행율이 0%로 나왔다. 또 종료 훅이 파일명을 대소문자 구분해 비교하므로(`ROADMAP.md`) 소문자 파일명이면 고쳐도 계속 막힌다. S 슬라이스는 P2·P3 안의 작업으로 유지 |
 | 2026-11-12 | **`ROADMAP.md`는 교육장 묶음 것을 쓰지 않고 다시 씀** | 묶음 것(P0~P5, 29작업)은 단계 골격만 있고 S-1~S2 상세(작업 전 확인·만들 파일·완료 판정·112행 내역)가 없다. 기존 로드맵의 상세를 살리고 묶음의 형식만 가져왔다. 기존 파일은 사용자 승인 후 삭제 |
 | 2026-11-12 | **`CLAUDE.md` 원칙 9번은 원본 그대로 쓰지 않고 고쳤다** | 원본 §6-9에는 테스트 단계 예외로 외부 API 체인(SOLA → Upstage → OpenAI → Mock)과 `MEETING_LLM_CHAIN` 설정이 적혀 있다. `code-gen.md` §3이 SOLA·프록시·외부 호출을 금지하므로 그대로 옮기면 서로 어긋난다. "사내 LLM만, 전환 지점은 `modules/llm_client.py` 한 군데, 실제 회사 메모는 넣지 않는다"로 바꿨다. 원칙 1~8은 원본 그대로 |
+| 2026-11-12 | **진단·검증 명령을 `uv run python -X utf8 …`로 바꿨다** | S0에서 의존성이 `.venv` 안으로 들어갔다. 맨 `python`으로는 `check_libs`·`check_db`가 streamlit·sqlalchemy를 못 찾아 틀린 결과를 낸다. `CLAUDE.md` §5와 이 문서의 완료 판정 블록을 모두 고쳤다 (`check_data`·`_check.py`는 표준 라이브러리만 쓰므로 어느 쪽이든 돌지만 명령을 통일했다) |
+| 2026-11-12 | **선택 라이브러리는 기본 설치에서 뺐다** | `st_aggrid`·`streamlit_drawable_canvas`는 사외망에서 설치가 막힐 수 있다(`code-gen.md` §4⑦). `pyproject.toml`의 `[project.optional-dependencies] ui`로 빼 두고 `uv sync --extra ui`로만 깔리게 했다. 기본 `uv sync`가 이것들 때문에 실패하면 앱 자체를 못 띄운다 |
+| 2026-11-12 | **`config/settings.py`의 비밀값 읽기 시점 수정** | 처음에는 `st.secrets` 속성 접근을 `try`로 감쌌는데, Streamlit은 접근이 아니라 **읽는 시점**에 `StreamlitSecretNotFoundError`를 던진다. 그래서 `secrets.has()` 호출이 그대로 터졌다. `st.secrets.get(...)` 호출 자체를 감싸도록 고쳤다 — 사외망에서 `secrets.toml`이 없는 것이 정상 상태이므로 터지지 않고 기본값을 줘야 한다 |
 | 2026-11-12 | **`check_libs.py`는 S0 전까지 `EXIT=1`이 정상** | 필수 `streamlit`·`sqlalchemy`·`pandas`가 아직 설치되지 않았다(`pyproject.toml`이 S0 산출물). S-1 완료 판정은 "크래시 없이 끝남 + `check_data` EXIT=0"이고, `check_libs` EXIT=0은 **S0 완료 판정**이다. 선택 라이브러리(`st_aggrid`·`drawable_canvas`·`pptx`)는 없어도 오류로 세지 않는다 — `code-gen.md` §4⑦ 강등 경로 전제 |
 
 ## 범위 밖 / 미결

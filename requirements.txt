@@ -1,0 +1,14 @@
+# uv 를 쓸 수 없는 환경(사내망 등)에서 pip 로 깔 때 쓴다.
+#   python -m pip install -r requirements.txt
+# 정본은 pyproject.toml 이다. 한쪽만 고치지 않는다.
+
+streamlit>=1.40
+sqlalchemy>=2.0
+pandas>=2.2
+python-pptx>=1.0
+
+# 선택 — 사외망에서 설치가 막힐 수 있다. 없으면 강등 경로를 쓴다 (code-gen.md §4⑦).
+#   st_aggrid 없음              → st.data_editor
+#   drawable_canvas 없음        → st.image + 좌표 수동 입력
+# streamlit-aggrid>=1.0
+# streamlit-drawable-canvas>=0.9
