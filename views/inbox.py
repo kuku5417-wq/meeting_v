@@ -14,6 +14,7 @@ import streamlit as st
 
 from modules import extract, issues
 from modules.llm_client import LLMNotConfigured, is_configured
+from views import theme
 
 
 def _departments() -> dict[str, str]:
@@ -44,7 +45,7 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
             body = st.text_area("현상", value=c.get("body", ""), key=f"cy_{memo_id}_{i}")
 
             if c.get("quote"):
-                st.caption(f"근거: 「{c['quote']}」")
+                st.markdown(theme.evidence(f"근거: {c['quote']}"), unsafe_allow_html=True)
 
             if st.button("이슈로 등록", key=f"cr_{memo_id}_{i}", type="primary"):
                 bid = extract.register(
@@ -73,7 +74,8 @@ def render() -> None:
     )
 
     col1, col2 = st.columns([1, 3])
-    if col1.button("저장", type="primary", disabled=not raw.strip()):
+    if col1.button("저장", type="primary", disabled=not raw.strip(),
+                   help="메모를 붙여넣으면 누를 수 있다"):
         mid = extract.save_memo(raw)
         st.session_state["last_memo"] = mid
         st.success(f"메모 저장 — {mid[:8]}")
@@ -91,7 +93,8 @@ def render() -> None:
         if is_configured():
             if st.button("AI 로 정리"):
                 try:
-                    kept, dropped = extract.extract(text)
+                    with st.spinner("사내 LLM 이 메모를 정리하는 중"):
+                        kept, dropped = extract.extract(text)
                 except LLMNotConfigured as e:
                     st.error(str(e))
                     kept, dropped = [], []

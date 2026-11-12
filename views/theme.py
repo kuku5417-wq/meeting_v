@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 
+import html
 import re
 
 import streamlit as st
@@ -118,6 +119,14 @@ h3 { font-size: var(--fs-3); }
   display: inline-block; padding: 1px 8px; border-radius: 99px;
   font-size: var(--fs-1); font-weight: var(--fw-strong); line-height: 1.7;
 }
+
+/* 근거 표시 — 디자인_규칙 §3 "근거 표시: 노란 바탕(--warn-soft)" */
+.sd-evidence {
+  background: var(--warn-soft);
+  border-left: 3px solid var(--signal);
+  padding: 8px 12px; border-radius: 0 4px 4px 0;
+  font-size: var(--fs-1); color: var(--fg);
+}
 """
 
 
@@ -126,16 +135,32 @@ def apply() -> None:
     st.markdown(f"<style>\n{_tokens()}\n{_LAYOUT}</style>", unsafe_allow_html=True)
 
 
-def chip(text: str, kind: str | None = None) -> str:
-    """의미 색이 붙은 작은 배지의 HTML.
+def _token_for(key: str) -> str | None:
+    """뜻 이름 → 색 토큰. 뒤에 값이 붙어도 앞의 뜻으로 찾는다.
 
-    `kind` 를 주지 않으면 `text` 자체(상태·유형 이름)로 색을 찾는다.
-    찾지 못하면 중립색이다 — 색을 지어내지 않는다.
+    경보 칸은 `"일정 임박 D+28"` 처럼 뜻 뒤에 날짜가 붙는다. 그대로 찾으면 못 찾아
+    중립색이 되므로, 앞머리가 맞는 뜻을 본다. 그래도 없으면 `None` — 색을 지어내지 않는다.
     """
-    token = MEANING.get(kind or text)
+    if key in MEANING:
+        return MEANING[key]
+    for name, token in MEANING.items():
+        if key.startswith(name):
+            return token
+    return None
+
+
+def chip(text: str, kind: str | None = None) -> str:
+    """의미 색이 붙은 작은 배지의 HTML. 뜻을 못 찾으면 중립색이다."""
+    safe = html.escape(text)
+    token = _token_for(kind or text)
     if token is None:
-        return f'<span class="sd-chip" style="background:var(--surface-2);color:var(--muted)">{text}</span>'
+        return f'<span class="sd-chip" style="background:var(--surface-2);color:var(--muted)">{safe}</span>'
     return (
         f'<span class="sd-chip" style="background:var(--{token}-soft);'
-        f'color:var(--{token})">{text}</span>'
+        f'color:var(--{token})">{safe}</span>'
     )
+
+
+def evidence(text: str) -> str:
+    """근거 표시 — 노란 바탕(`--warn-soft`). 디자인_규칙 §3 "근거 표시"."""
+    return f'<div class="sd-evidence">{html.escape(text)}</div>'

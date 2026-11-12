@@ -123,9 +123,10 @@ def render() -> None:
     if left.button("저장", type="primary", key=f"save_{name}"):
         done = _save(name, cls, before, after)
         if any(done.values()):
-            st.success(f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}")
+            st.toast(f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}",
+                     icon=":material/check:")
         else:
-            st.info("바뀐 것이 없다")
+            st.toast("바뀐 것이 없다", icon=":material/info:")
         st.rerun()
 
     st.divider()
@@ -135,7 +136,8 @@ def render() -> None:
         "CSV 값으로 바뀐다. 화면에서 고친 내용은 사라진다."
     )
     ok = st.checkbox("편집한 내용이 사라져도 괜찮다", key="reseed_ok")
-    if st.button("CSV 로 재시드", disabled=not ok, key="reseed"):
+    if st.button("CSV 로 재시드", disabled=not ok, key="reseed",
+                 help="위 칸을 켜야 누를 수 있다 — 지금 DB 의 값이 지워진다"):
         loaded = seed.seed_masters(force=True)
-        st.success(f"재시드 완료 — {sum(loaded.values())}행 / {len(loaded)}표")
+        st.toast(f"재시드 완료 — {sum(loaded.values())}행 / {len(loaded)}표", icon=":material/check:")
         st.rerun()

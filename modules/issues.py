@@ -31,6 +31,12 @@ PREFIX = {"issue": "ISS", "problem": "PRB", "share": "SHR", "dashboard": "DSH"}
 BLOCK_TYPES = tuple(PREFIX)
 STATUSES = ("신규", "진행", "종결요청", "종결")
 
+# 원장에서 사람이 **고를 수 있는** 상태. 「종결」이 빠져 있다.
+# **종결은 부서가 하지 않는다** (`CLAUDE.md` §6-7) — 부서는 「종결 요청」(조치 내용 필수)까지고,
+# 승인은 부서 현안 공유회의 진행 화면(S7)이나 기획 주관자가 홈(F19)에서 한다.
+# `STATUSES` 는 DB 에 들어갈 수 있는 값 전부라 「종결」을 그대로 둔다 — 거르기에도 쓴다.
+ASSIGNABLE_STATUSES = ("신규", "진행", "종결요청")
+
 # 매핑 n/5 를 세는 갈래 (F3 — 호선·장비·부위·증상·원인)
 MAPPING_KINDS = ("hull", "installed_equipment", "component", "symptom", "cause")
 

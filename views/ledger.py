@@ -42,17 +42,21 @@ def _bulk(rows: list[dict[str, object]], depts: dict[str, str]) -> None:
         dept = col1.selectbox(
             "담당 부서", ["(그대로)", *depts], format_func=lambda d: depts.get(d, d), key="bulk_dept"
         )
-        status = col2.selectbox("상태", ["(그대로)", *issues.STATUSES], key="bulk_status")
+        status = col2.selectbox(
+            "상태", ["(그대로)", *issues.ASSIGNABLE_STATUSES], key="bulk_status",
+            help="「종결」은 부서가 하지 않는다 — 공유회 진행 화면이나 기획 주관자가 승인한다",
+        )
         important = col3.selectbox("중요", ["(그대로)", "중요", "보통"], key="bulk_important")
 
-        if st.button("한꺼번에 바꾸기", disabled=not picked, key="bulk_go", type="primary"):
+        if st.button("한꺼번에 바꾸기", disabled=not picked, key="bulk_go", type="primary",
+                     help="바꿀 이슈를 먼저 고른다"):
             n = issues.bulk_update(
                 picked,
                 department_id=None if dept == "(그대로)" else dept,
                 status=None if status == "(그대로)" else status,
                 important=None if important == "(그대로)" else (important == "중요"),
             )
-            st.success(f"{n}건 바꿨다") if n else st.info("바뀐 것이 없다")
+            st.toast(f"{n}건 바꿨다" if n else "바뀐 것이 없다", icon=":material/check:")
             st.rerun()
 
 
@@ -128,7 +132,8 @@ def _draft_tab(block_id: str) -> None:
     col1, col2 = st.columns([1, 2])
     role = col1.selectbox("구분", issues.PHOTO_ROLES, key=f"role_{block_id}")
     cap = col2.text_input("설명", key=f"cap_{block_id}", max_chars=80)
-    if st.button("붙이기", key=f"attach_{block_id}", disabled=up is None):
+    if st.button("붙이기", key=f"attach_{block_id}", disabled=up is None,
+                 help="올릴 사진을 먼저 고른다"):
         issues.attach_photo(block_id, up.name, up.getvalue(), role, cap)
         st.rerun()
 
@@ -197,7 +202,10 @@ def _detail(block_id: str, row: dict[str, object] | None = None) -> None:
     with tab_hist:
         note = st.text_input("이번 주 한 줄", key=f"note_{block_id}")
         col1, col2 = st.columns([1, 2])
-        new_status = col1.selectbox("상태", ["(그대로)", *issues.STATUSES], key=f"st_{block_id}")
+        new_status = col1.selectbox(
+            "상태", ["(그대로)", *issues.ASSIGNABLE_STATUSES], key=f"st_{block_id}",
+            help="「종결」은 부서가 하지 않는다 — 공유회 진행 화면이나 기획 주관자가 승인한다",
+        )
         if col2.button("진행 추가", key=f"add_{block_id}", type="primary"):
             if not note.strip():
                 st.error("한 줄은 있어야 한다")
@@ -230,7 +238,8 @@ def _detail(block_id: str, row: dict[str, object] | None = None) -> None:
                 st.error("표기는 있어야 한다")
             else:
                 ok = issues.add_tag(block_id, kind, raw)
-                st.success("기준정보에 걸렸다" if ok else "기준정보에 없다 — 「미등록」으로 남는다")
+                st.toast("기준정보에 걸렸다" if ok else "기준정보에 없다 — 「미등록」으로 남는다",
+                         icon=":material/check:" if ok else ":material/help:")
                 st.rerun()
 
 
