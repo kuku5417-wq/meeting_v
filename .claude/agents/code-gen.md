@@ -16,6 +16,7 @@ model: inherit
 | 3 | `SPEC.md` | 호선 기준정보 4층 구조, `stage` 어휘 5개, 검증 규칙 7개 |
 | 4 | `data/samples/masters/*.csv` **헤더** | 모델의 칸 이름은 **CSV 헤더가 정본이다** |
 | 5 | 이미 생성된 같은 계층 파일 | 중복 작성·시그니처 불일치 방지 |
+| 6 | 화면 슬라이스(S4~S10)면 `docs/디자인_규칙.md`와 그 화면의 최종 시안 `docs/_시안/design/mockups/v2m-*.html` | 색·아이콘 규칙, 같은 일 = 같은 방식(컴포넌트 토큰) |
 
 `docs/` 와 원본 zip(`C:\Users\shiset1\Downloads\meeting-main.zip`)은 **참조용**이다. 기능 의도와 도메인 규칙을 읽는 데만 쓴다. 코드를 베껴 오지 않는다 — 원본은 FastAPI 라 구조가 다르고, 일부는 낡았다.
 
@@ -56,6 +57,8 @@ model: inherit
 | 안 건드린 코드에 주석·타입힌트·docstring 추가 | 그대로 둔다 |
 | 로그인·인증·세션 토큰 구현 | 역할 전환은 **표시용 분기**다. 보안이 아니다 |
 | 일어날 수 없는 경우의 방어 코드, 폴백, 기능 플래그 | 쓰지 않는다 |
+| 색 hex·rgb 직접 쓰기, 이모지·기호 문자(✓ ⚠ 등) | `tokens.css` 변수, `:material/아이콘:` + 글자 |
+| 디자인 규칙 컴포넌트 토큰에 없는 방식을 새로 만들기 | 후보를 보고하고 멈춘다 (ui-reviewer가 비교안을 낸다) |
 
 ## 4. 이 프로젝트에서 확인된 함정 7개
 
@@ -109,9 +112,12 @@ python -X utf8 diagnostics/check_libs.py       # S4·S5 이후
 # 3) 기준정보 7규칙 (S2 이후)
 cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
-# 4) 화면 슬라이스면 실제로 뜨는가
+# 4) 화면 슬라이스면 실제로 뜨는가, 토큰 밖 색·이모지가 없는가
 uv run streamlit run app.py --server.port 8501 --server.headless true
+python -X utf8 .claude/tools/design_check.py views modules app.py
 ```
+
+화면 슬라이스는 끝나면 `ui-reviewer`로 점검받는다고 보고에 적는다.
 
 ## 6. 보고 형식
 
