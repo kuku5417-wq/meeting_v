@@ -21,7 +21,7 @@
 
 ## 다음 할 일
 
-1. **§10-2 네 가지 — S1·S2를 막고 있다.** `data_manager`에서 출처는 확인했다(`milestone`+`trial_schedule`). 남은 것은 `WF`가 진수인가 공사완료인가, 어느 계열(PLAN/PROS/PERF)을 쓰는가, 시운전을 회차로 보는가, 겹칠 때 우선순위.
+1. **§10 이벤트 표를 `requirements.md`에 적는다 — S1·S2를 막고 있다.** 출처·계산 규칙은 끝났다(§10-1·§10-2). 표 이름·칸 이름만 정하면 된다(§10-3) — §9-A에 따라 내가 짓지 않는다.
 2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. **§10을 기다리는 동안 할 수 있는 일이다.**
 3. **P2 S1** — 기준정보 15표 선언. §9는 끝났고 §10만 남았다. `stage`를 파생 값으로 둘지가 모델 선언에 걸리므로 §10 뒤에 간다. 상세는 "P2 단계별 상세 — S1" 절.
 
@@ -60,7 +60,7 @@ flowchart LR
 - [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
 - [x] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`를 `main`에 병합하고 `origin/main`에 push (`bdebcc9..1f83269`). 미push 상태였던 이전 3커밋(`6720745`·`f27d8e4`·`45e4f0f`)도 함께 올라갔다
 - [x] `SPEC.md` §9 정해야 할 것 4건 확정 (2026-11-12) — 9-1 약호 `174km3 LNG` 꼴 / 9-2 적재량까지 유지 / 9-3 계약 순서 + 대책 반영은 호선 ID로 / 9-4 단계 4개 + 일정에서 계산(§10 선행). 결정 브리핑: https://claude.ai/artifact/AGSoCiE1p1GLDdY1jhPXsD
-- [~] `SPEC.md` §10 호선 이벤트 일정 정의 — 출처 확인 완료(`data_manager`의 `milestone`+`trial_schedule`, §10-1). **남은 것은 §10-2 네 가지** (WF 해석·계열 선택·회차·겹침). **P2 S1·S2의 선행**
+- [~] `SPEC.md` §10 호선 이벤트 일정 — 출처(§10-1)·계산 규칙(§10-2) 확정. **남은 것은 표 이름·칸 이름과 `일정구분` 값 목록**(§10-3). **P2 S1·S2의 선행**
 - [ ] `requirements.md` §2 미결 2건 확정 — `slide_object.props` 타입별 칸 분리 여부, 나머지 운영 표 정의 (**P3 S5·S7의 선행**)
 - [ ] 시안 중 확정안 표시, 나머지는 `docs/_시안/보관/`으로
 
@@ -288,12 +288,19 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 - `milestone.parquet` — 호선 마일스톤. MySQL `pjtevnt` 미러, **wide 그대로**. 키 `project`(ensure_sn), `PLAN`/`PROS`/`PERF` × 15 이벤트. `COLDFROM`·`GASFROM`·`STFROM`·`WF`(진수)·`DL`(인도)이 여기 있다
 - `trial_schedule.parquet` — 시운전 **항차**. `PJT`·`일정구분`·`출항`·`복귀`. **`AC`는 여기 `일정구분` 값이다** (`LC~GT+1`·`AC`·`통합시운전`·`ST,DP`·`인도준비`)
 
-**남은 네 가지** (상세는 `SPEC.md` §10-2)
+**계산 규칙 확정** (상세는 `SPEC.md` §10-2)
 
-1. **`WF`가 진수인가 공사완료인가.** `milestone.WF`는 진수다. `pjtlist`에는 `WORKFINISH`가 따로 있다. 진수로 보면 `WF~DL`이 거의 전부를 덮어 **안벽기간이 남지 않는다**
-2. `PLAN`·`PROS`·`PERF` 중 어느 계열을 쓰는가
-3. 시운전을 `milestone`의 한 구간으로 보는가, `trial_schedule`의 회차로 보는가
-4. 구간이 겹칠 때의 우선순위
+- 날짜는 **`PERF`(실적) → `PROS`(전망) → `PLAN`(계획)** 순으로 처음 값이 있는 것
+- `시운전기간` = 항차 `출항`~`복귀`(실적이라 최종). **항차가 없으면** `STFROM~STTO`·`GASFROM~GASTO`
+- `앵카링기간` = `일정구분`이 `AC`인 항차 + `COLDFROM~COLDTO`
+- `Layup` = **`pjtlist.WORKFINISH` ~ `DL`** (진수가 아니다. 공사 끝나고 인도까지 대기 계류)
+- `안벽기간` = 나머지 / `인도선` = `DL`이 지남
+- **겹치면 시작일이 가장 늦은 구간**이 현재 단계
+
+**남은 작은 것 두 가지** (`SPEC.md` §10-3)
+
+1. `trial_schedule.일정구분`의 **값 목록 전체** — 스키마에 "등"으로만 적혀 있어 어느 값이 시운전인지 확정하지 못한다
+2. **표 이름·칸 이름** — §9-A에 따라 짓지 않는다. `data_manager` 헤더를 그대로 받을지 정해야 한다
 
 **덤으로 확인된 것** — `pjtlist.parquet`가 우리 `hull`의 실데이터 출처다. `SHIPNUM`↔`id`, `SEQNO`↔`series_no`, `MAINHULLNUM`↔`sister_group_id` 등으로 거의 1:1 대응한다. `data_manager/sn_util.py`의 `ensure_sn`이 `code-gen.md` §4③과 같은 동작이라, S2의 `modules/sn_util.py`는 그 규칙을 따른다.
 
