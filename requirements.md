@@ -23,7 +23,7 @@
 | 7 | `system` | `id, code, name, parent_id` | 4 | ✅ `system.csv` | 자기참조(parent_id) — 시드 시 부모 행 먼저 |
 | 8 | `maker` | `id, name` | 2 | ✅ `maker.csv` | — |
 | 9 | `equipment_model` | `id, maker_id, name, model_no` | 4 | ✅ `equipment_model.csv` | — |
-| 10 | `installed_equipment` | `id, hull_id, equipment_model_id, system_id, name, unit_no, position` | 7 | ✅ `installed_equipment.csv` | 호선별 탑재 장비. 9행(`SPEC.md` §6-2 수치와 일치) |
+| 10 | `installed_equipment` | `id, hull_id, equipment_model_id, system_id, name, unit_no, position` | 7 | ✅ `installed_equipment.csv` | 호선별 탑재 장비. 7행 — 진행 호선만 남기면서 끊긴 참조 4행을 뺐다(`SPEC.md` §6) |
 | 11 | `component` | `id, equipment_model_id, name` | 3 | ✅ `component.csv` | `equipment_model_id`는 CSV상 공란 허용 |
 | 12 | `test_item` | `id, code, name, system_id` | 4 | ✅ `test_item.csv` | 시운전 절차서 출처(원본 기준) |
 | 13 | `symptom_code` | `id, code, name, parent_id` | 4 | ✅ `symptom_code.csv` | 자기참조. 4행(`SPEC.md` §6-2 수치와 일치) |
@@ -203,7 +203,20 @@ F22는 사내망 고정본(P5)에서만 가능하다.
 
 **함께 읽어야 하는 것** — `Layup` 경계에 `pjtlist.WORKFINISH`(공사 완료일)가 필요하다. `pjtlist`는 우리 `hull`의 실데이터 출처이기도 하다 (`SHIPNUM`↔`id`, `SEQNO`↔`series_no`, `MAINHULLNUM`↔`sister_group_id` 등).
 
-**사외망에서는** 이 표를 샘플 CSV로 대신한다. 사내망 전환 지점이다.
+**함께 받는 표는 둘이다** (2026-11-12 확정)
+
+| 표 | 쓰는 칸 | 무엇에 |
+|---|---|---|
+| `milestone.parquet` | `project` + `PLAN/PROS/PERF<EVT>` | 시운전·앵카링 구간, 인도일 |
+| `pjtlist.parquet` | `SHIPNUM` · `WORKFINISH` | **Layup 의 시작**(공사 완료일). 나머지 칸은 `hull` 이 이미 갖고 있다 |
+
+**사외망에서는** 둘 다 `data/samples/mirror/` 의 샘플 CSV로 대신한다. 사내망 전환 지점이고,
+바꿀 곳은 `modules/milestone.py` 의 `_read()` 하나다.
+
+> **샘플은 전체 칸을 담지 않는다.** 사내 `milestone` 은 17 이벤트 × 3계열 = 52칸이지만,
+> 샘플에는 **계산에 쓰는 10 이벤트(31칸)만** 넣었다 — `COLD`·`ST`·`GAS`·`AC`·`WF`·`DL`.
+> `milestone.events()` 가 칸 이름에서 이벤트를 읽어 내므로 칸이 늘거나 줄어도 그대로 돈다
+> (사내 표가 `SELECT *` 라 실제로 늘 수 있다).
 
 **선언 시점** — `modules/models.py`에는 **S1에서 넣지 않는다.** S1의 완료 판정이 "선언된 표가 15개"이고, 이 표는 기준정보가 아니다. 실제로 읽어 `stage`를 계산하는 **S2(DB·시드) 또는 S4(설정 화면)**에서 넣는다.
 
@@ -211,8 +224,36 @@ F22는 사내망 고정본(P5)에서만 가능하다.
 
 ## §2. 정해야 할 것 (확인 필요 목록)
 
-> **지금 열려 있는 결정은 없다.** 2026-11-12에 운영 표(§1-2-2)와 F 배정(§1-3-2)을 채우고
-> 그때 생긴 범위 결정 4건을 모두 닫았다. 새 미결이 생기면 여기에 적는다.
+> 2026-11-12 오전에 범위 결정 4건을 닫았는데, 그날 오후 `spec-guard` 검사에서
+> **두 건이 다시 열렸다.** 아래 둘은 **S7 시작 전에** 닫아야 한다.
+
+### 열려 있는 결정
+
+**A. 「회의자료」를 어느 표로 만드는가** — *S7을 막는다*
+
+같은 것을 가리키는 표가 **둘** 적혀 있다. 내가 §1-2-2를 채우면서 생긴 모순이다.
+
+| | 출처 | 칸 |
+|---|---|---|
+| `meeting_deck` (§1-2) | v2e-studio 시안 | `kind`(dept/share/exec) · `issue_id` · `status`(draft/submitted) |
+| `meeting` (§1-2-2) | 원본 `docs/03` | `kind`(dept/share/exec/**hull/review**) · `status`·`version`·`order_json`·`hull_id` |
+
+`meeting` 쪽이 넓다 — 호선별·리뷰 회의와 **판(`version`)**이 있다. 판은 F8(사실 되먹임)·F10(취합)의 전제라
+`meeting_deck` 만으로는 그 둘을 만들 수 없다. 다만 v2e-studio 시안은 `meeting_deck` 모양으로 그려져 있다.
+**하나로 합칠지, 시안 쪽을 `meeting` 으로 바꿀지** 정해야 한다.
+
+**B. `hull.stage` 를 언제 다시 계산하는가**
+
+`SPEC.md` §3-3·§6은 "`milestone.py` 가 계산한다. 손으로 적지 않는다"고 적었는데,
+실제로는 **2026-11-12에 한 번 계산해 CSV에 박아 둔 스냅샷**이고 앱에 재계산 경로가 없다
+(`milestone.stage()` 를 부르는 코드가 하나도 없다). 규칙 자체는 코드에 그대로 들어가 있고
+13척 전부 CSV 값과 맞는 것은 확인했다. 선택지 셋이다.
+
+1. **볼 때마다 계산** — 원장·설정이 `stage` 를 보일 때 `milestone.stage()` 로 그린다. 일정이 바뀌면 바로 따라간다
+2. **재계산 버튼** — 설정 화면에서 사람이 눌러 DB 값을 새로 쓴다. 언제 바뀌었는지가 분명하다
+3. **스냅샷으로 둔다** — 그러면 §3-3·§6의 "계산한다"를 "기준일 스냅샷이다"로 고쳐야 한다
+
+지금은 설정 화면에서 `stage` 칸을 **잠가** 두었다(손으로 못 고친다). 어느 쪽이든 그 잠금은 유지된다.
 
 ### 2026-11-12에 정한 것
 

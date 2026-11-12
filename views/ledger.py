@@ -1,4 +1,5 @@
-"""이슈 원장 (S5) — F2 그리드 · F3 지식 매핑 · F4 주간 업데이트.
+"""이슈 원장 (S5) — F2 그리드 · F3 지식 매핑 · F4 주간 업데이트 · F5 1차 초안 ·
+F21 일정 경보 · F23 일괄 정리 (`requirements.md` §1-3-2).
 
 `st_aggrid` 를 쓰지 않는다. 사외망에서 설치가 막힐 수 있어 `st.dataframe` 으로 간다
 (`code-gen.md` §4⑦). Enterprise 기능(rowGroup·pivot)은 애초에 범위 밖이다.

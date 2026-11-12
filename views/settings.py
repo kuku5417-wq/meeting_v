@@ -1,4 +1,4 @@
-"""설정 — 기준정보 15종 CRUD·재시드 (S4).
+"""설정 — 기준정보 15종 CRUD·재시드 (S4 / **F18**).
 
 표를 `st.data_editor` 로 고친다. `st_aggrid` 는 사외망에서 설치가 막힐 수 있어
 쓰지 않는다 — `code-gen.md` §4⑦ 의 강등 경로다. Enterprise 기능(rowGroup·pivot)은
@@ -22,6 +22,10 @@ from modules import seed
 from modules.db import session
 
 TABLES: dict[str, type] = dict(seed.SEED_ORDER)  # 순서 = FK 순서
+
+# 사람이 고치면 안 되는 칸. `hull.stage` 는 호선 이벤트 일정에서 **계산되는 값**이라
+# 손으로 적으면 일정과 어긋난다 (`SPEC.md` §3-3·§10-2).
+READ_ONLY: dict[str, list[str]] = {"hull": ["stage"]}
 
 
 def _pk(cls: type) -> tuple[str, ...]:
@@ -99,11 +103,19 @@ def render() -> None:
 
     st.caption("기본키: " + " + ".join(f"`{c}`" for c in _pk(cls)))
 
+    locked = READ_ONLY.get(name, [])
+    if locked:
+        st.caption(
+            "잠긴 칸: " + " · ".join(f"`{c}`" for c in locked)
+            + " — 호선 이벤트 일정에서 계산되는 값이라 손으로 고치지 않는다 (`SPEC.md` §3-3)."
+        )
+
     before = _read(cls)
     after = st.data_editor(
         before,
         num_rows="dynamic",
         use_container_width=True,
+        disabled=locked,
         key=f"editor_{name}",
     )
 

@@ -153,7 +153,8 @@ class Component(Base):
     __tablename__ = "component"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    equipment_model_id: Mapped[str] = mapped_column(ForeignKey("equipment_model.id"))
+    # 공란 허용 — `requirements.md` §1-1 #11. 어느 장비 모델에도 매이지 않는 부위가 있다.
+    equipment_model_id: Mapped[str | None] = mapped_column(ForeignKey("equipment_model.id"))
     name: Mapped[str] = mapped_column(String(64))
 
 
@@ -289,7 +290,9 @@ class Block(Base):
     decision_needed: Mapped[str | None] = mapped_column(Text)
     important: Mapped[bool | None] = mapped_column(Boolean)
     # 일정 경보 (F21) — 날짜는 milestone 에서 잡는다
-    due_event: Mapped[str | None] = mapped_column(String(16))  # "" / ST / GT / DL / DATE
+    # 어휘는 `modules/issues.py` 의 `DUE_EVENTS` 하나다 — "" / STTO / GASTO / ACTO / DL / DATE.
+    # `milestone` 의 이벤트 이름을 그대로 쓴다 (`requirements.md` §1-2-2).
+    due_event: Mapped[str | None] = mapped_column(String(16))
     due_date: Mapped[datetime.date | None] = mapped_column(Date)
     alert_days: Mapped[int | None] = mapped_column(Integer)
     alert_off_reason: Mapped[str | None] = mapped_column(Text)
