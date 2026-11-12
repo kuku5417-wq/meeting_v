@@ -91,22 +91,43 @@
 | `case_card` | `id`, `block_id`, `symptom_text`, `cause_text`, `action_text`, `symptom_code_id`, `cause_code_id`, `installed_equipment_id`, `approved_week_id`, `validity`, `view_count` |
 | `block_link` | `from_block_id`, `to_block_id`, `relation`(재발/동일원인/관련/참고) |
 
+**사진 (S5 — F5 「상세 한 장」)** — 2026-11-12 결정으로 **4종 전부 1차**
+
+| 표 | 주요 칸 | 비고 |
+|---|---|---|
+| `photo` | `id`, `file_path`, `sha256`, `width`, `height`, `taken_at`, `uploaded_by` | **원본 불변** (`CLAUDE.md` §6-1). 경로는 데이터 폴더 기준 `photos/<sha 앞 2자>/<sha>.<확장자>`, `width`·`height`는 EXIF 회전 적용 크기 |
+| `photo_link` | `photo_id`, `block_id`, `role`(main/before/after), `order_no`, `caption`, `note` | 한 사진을 여러 블록에. 같은 구분에 여러 장 가능 |
+| `annotation` | `id`, `photo_id`, `block_id`, `shapes_json`, `updated_at` | **사진 위에 굽지 않고 좌표 JSON으로 따로 저장한다.** 출력할 때만 합성 |
+| `marker` | `id`, `annotation_id`, `no`, `x`, `y`, `label`, `component_id` | 번호 마커 → 부위 태그 → 사진 검색 |
+
+> **강등 경로가 전제다.** `streamlit_drawable_canvas`가 사외망에서 막힐 수 있다 (`code-gen.md` §4⑦).
+> 없으면 `st.image` + 좌표 수동 입력으로 떨어진다. 어느 쪽이든 저장되는 것은 **좌표 JSON**이라 모델은 같다.
+> `config/paths.py`에 사진 폴더(`photos/`) 창구를 더해야 한다 — S5에서 한다.
+
+**지표 (S7 — F16)** — 2026-11-12 결정으로 **주간 지표만 1차**
+
+| 표 | 주요 칸 | 비고 |
+|---|---|---|
+| `metric_def` | `id`, `department_id`, `name`, `unit`, `order_no`, `normal_low`, `normal_high`, `hidden` | 지표 정의. 숨겨도 값은 남는다 |
+| `metric_value` | `id`, `metric_def_id`, `week_id`, `value`, `comment`, `block_id`, `human` | 주차별 값. **이번 주만 입력.** `human`은 사람이 넣은 값 — AI가 덮지 않는다. `comment`는 차이 사유 |
+| `app_setting` | `key`, `value` | 화면에서 바꾸는 업무 설정. `metric_range_weeks`(평소 범위를 잡는 최근 n주, 처음 8) · `alert_days:<이벤트>`(F21 기본 경보 일수, 처음 14) |
+
+> 기간 표(`metric_table`·`metric_cell`)는 **2차**다. 그래서 1차 회의자료에는
+> `report_item.kind`의 **`metric`(지표 요약) 장만 있고 `table`(기간 표) 장은 없다.**
+
 **사람**
 
 | 표 | 주요 칸 | 비고 |
 |---|---|---|
 | `person` | `id`, `name`, `department_id` | 역할 전환은 **표시용 분기**다. 로그인·인증을 만들지 않는다 (`CLAUDE.md` §9) |
 
-### §1-2-3. 1차에 넣지 않는 표 — 범위 결정이 필요하다
+### §1-2-3. 2차로 미룬 표 (2026-11-12 확정)
 
-아래는 원본에 있지만 **이번 라운드 범위를 정하지 않았다.** §2에서 결정한다.
-
-| 묶음 | 표 | 왜 미뤘나 |
+| 묶음 | 표 | 왜 |
 |---|---|---|
-| 사진 | `photo`, `photo_link`, `annotation`, `marker` | F5 「상세 한 장」에 사진이 들어간다. `streamlit_drawable_canvas`가 사외망에서 막힐 수 있어 강등 경로(좌표 수동 입력)가 전제다 |
-| 지표 | `metric_def`, `metric_value`, `metric_table`, `metric_cell`, `app_setting` | F16. 회의자료의 「지표 요약」·「기간 표」 장이 여기 걸린다 |
-| 외부 자료 | `import_job`, `import_piece`, `meeting_candidate` | F14·F22. **메일 수집은 Outlook이 필요해 사외망에서 못 만든다** (`code-gen.md` §3) |
-| 운영 로그 | `llm_call_log` | 본문은 저장하지 않는다 |
+| 기간 표 | `metric_table`, `metric_cell` | 주간 지표만 1차로 했다. 회의자료의 「기간 표」 장도 함께 2차 |
+| 외부 자료 | `import_job`, `import_piece`, `meeting_candidate` | F14를 F22와 함께 2차로 확정. **메일 수집은 Outlook이 필요해 사외망에서 못 만든다** (`code-gen.md` §3) |
+| 운영 로그 | `llm_call_log` | 본문은 저장하지 않는다. 진단으로 충분하다 |
 
 ---
 
@@ -135,7 +156,7 @@
 | F2 | 이슈 원장 | **S5** | ○ | 데이터 그리드. `st_aggrid` 없으면 `st.data_editor`로 강등 (§4⑦) |
 | F3 | 지식 매핑 | **S5** | ○ | 별칭 사전 + `ensure_sn`. 둘 다 있다 |
 | F4 | 주간 업데이트 | **S5** | ○ | `block_history` 한 줄 |
-| F5 | 1차 초안 | **S5** | △ | 사진이 들어간다 — 사진 표 범위 결정 필요(§2) |
+| F5 | 1차 초안 | **S5** | ○ | 사진 4종 1차 확정(2026-11-12). 마킹은 좌표 JSON, `drawable_canvas` 없으면 강등 |
 | F6 | 회의자료 구성 | S7 | ○ | v2e-studio 시안의 핵심 (§1-3) |
 | F7 | 요약 항목 | S7 | ○ | 회귀로 재등록된 기능 (§1-3) |
 | F8 | 사실 되먹임 | S7 | ○ | **2차.** 표현(`report_item`)과 사실(`block`)의 경계가 전제다 |
@@ -144,9 +165,9 @@
 | F11 | 발행·PPT | S8 | ○ | `python-pptx` 설치돼 있다 |
 | F12 | 회의 진행 | S7 | ○ | `meeting_comment`. 결정을 남기면 `decision_needed`를 비운다 |
 | F13 | 종결·사례화 | S7 + S9 | ○ | 승인하면 `case_card` 생성 |
-| F14 | 외부 자료 가져오기 | — | △ | **2차.** `.pptx`·`.html`은 사외망에서도 되지만 메일(F22)과 묶여 있다 |
+| F14 | 외부 자료 가져오기 | — | — | **2차 확정**(2026-11-12). F22와 한 묶음으로 미룬다 |
 | F15 | 지식 검색 | **S9** | ○ | 답은 사례 카드 ID를 반드시 인용 (`CLAUDE.md` §6-3) |
-| F16 | 지표 | S7 | ○ | 지표 표 범위 결정 필요(§2). 회의자료의 「지표 요약」 장이 여기 걸린다 |
+| F16 | 지표 | S7 | ○ | **주간 지표만 1차**(2026-11-12). 「지표 요약」 장은 1차, 「기간 표」 장은 2차 |
 | F17 | 호선 연계 | S2·S4 | **×** | 중앙 `pjtlist`·`milestone` — 사내망 전용. 사외망에서는 §1-4의 샘플 CSV로 대신한다 |
 | F18 | 설정 | **S4 ✅** | ○ | 완료 (2026-11-12). 기준정보 15종 CRUD·재시드 |
 | F19 | 홈 | **S10** | ○ | 마지막. 앞 슬라이스가 다 있어야 숫자를 센다 |
@@ -190,34 +211,17 @@ F22는 사내망 고정본(P5)에서만 가능하다.
 
 ## §2. 정해야 할 것 (확인 필요 목록)
 
-> 2026-11-12에 **운영 표(§1-2-2)와 F 배정(§1-3-2)을 채웠다.** 아래는 그러면서 남은 결정이다.
-> 급한 순서로 적었다 — 1번이 다음 슬라이스(S5)를 막는다.
+> **지금 열려 있는 결정은 없다.** 2026-11-12에 운영 표(§1-2-2)와 F 배정(§1-3-2)을 채우고
+> 그때 생긴 범위 결정 4건을 모두 닫았다. 새 미결이 생기면 여기에 적는다.
 
-**1. 사진 표 4종을 1차에 넣는가** — *S5를 막는다*
+### 2026-11-12에 정한 것
 
-`photo` · `photo_link` · `annotation` · `marker`. **F5(1차 초안)의 「상세 한 장」에 사진이 들어간다.**
-넣기로 하면 `streamlit_drawable_canvas`가 사외망에서 막힐 수 있어 **강등 경로**(`st.image` + 좌표 수동 입력,
-`code-gen.md` §4⑦)가 전제다. 빼기로 하면 F5는 글만 있는 초안이 된다.
-
-마킹을 사진 위에 굽지 않고 **좌표 JSON으로 따로 저장**한다는 원칙(`CLAUDE.md` §6-1)은 어느 쪽이든 유지된다.
-
-**2. 지표 표 5종을 1차에 넣는가** — *S7을 막는다*
-
-`metric_def` · `metric_value` · `metric_table` · `metric_cell` · `app_setting`. F16이고,
-회의자료의 「지표 요약」·「기간 표」 **장(`report_item.kind` = metric/table)**이 여기 걸린다.
-빼면 그 두 장이 회의자료에서 빠진다.
-
-**3. `slide_object.props`를 타입별 칸으로 쪼개는가** — *S7*
-
-JSON 통칸 유지는 2026-11-11에 확정했다. 쪼갠다면 세부 칸 목록이 필요하고,
-근거는 v2e-studio README의 「개체 타입」·「편집 가능한 개체」 표다.
-*원래 "S1에서 결정"이라고 적어 뒀는데, `slide_object`는 기준정보가 아니라 운영 표라 S1에서 다루지 않았다.
-실제로 쓰는 **S7 전에** 정하면 된다.*
-
-**4. 외부 자료 가져오기(F14)를 2차로 확정하는가** — *범위*
-
-`.pptx`·`.html` 조각내기는 사외망에서도 되지만, 메일 수집(F22)과 한 묶음으로 설계돼 있고
-F22는 Outlook이 필요해 사외망에서 못 만든다. **F14만 떼어 1차에 넣을지**, 둘 다 2차로 둘지.
+| # | 결정 | 반영 |
+|---|---|---|
+| 1 | **사진 표 4종 전부 1차** — `photo`·`photo_link`·`annotation`·`marker` | §1-2-2 사진. S5 범위가 커진다. `drawable_canvas` 강등 경로와 `config/paths.py`의 사진 폴더 창구가 따라온다 |
+| 2 | **주간 지표만 1차** — `metric_def`·`metric_value`·`app_setting` | §1-2-2 지표. 기간 표(`metric_table`·`metric_cell`)는 2차 → 회의자료에 `report_item.kind` **`metric` 장만 있고 `table` 장은 없다** |
+| 3 | **`slide_object.props`는 JSON 통칸 유지** | 2026-11-11 확정을 그대로 간다. 쪼개지 않는다 — 개체 타입이 늘어도 표가 바뀌지 않는다. 칸별 조회·검증은 코드에서 |
+| 4 | **F14는 F22와 함께 2차** | §1-2-3. 원본 설계의 묶음을 그대로 지킨다 |
 
 ---
 
