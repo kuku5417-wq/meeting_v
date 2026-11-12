@@ -11,7 +11,14 @@ maxUploadSize = 50
 gatherUsageStats = false
 
 [theme]
+# 시안 토큰(docs/_시안/design/tokens.css)의 **라이트 값**이다. 2026-11-12 결정으로
+# 다크 모드는 받지 않는다 — 시안에는 다크도 있지만 앱은 라이트 하나로 간다.
+# 나머지 토큰(의미 색·글꼴·크기)은 views/theme.py 가 CSS 로 넣는다.
 base = "light"
+primaryColor = "#0963c4"             # --accent
+backgroundColor = "#eef1f5"          # --bg
+secondaryBackgroundColor = "#ffffff" # --surface
+textColor = "#111114"                # --fg
 
 [runner]
 # 상호작용마다 스크립트를 처음부터 다시 돈다 (code-gen.md §4④).

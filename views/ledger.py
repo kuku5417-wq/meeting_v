@@ -13,10 +13,12 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from sqlalchemy import select
+
 from modules import issues
 from modules import models as m
 from modules.db import session
-from sqlalchemy import select
+from views import theme
 
 
 def _departments() -> dict[str, str]:
@@ -167,8 +169,20 @@ def _alert_tab(block_id: str) -> None:
         st.caption("목표를 정하지 않았다")
 
 
-def _detail(block_id: str) -> None:
-    st.markdown(f"### {block_id}")
+def _detail(block_id: str, row: dict[str, object] | None = None) -> None:
+    if row:
+        chips = " ".join(
+            theme.chip(str(row[k]))
+            for k in ("유형", "상태", "경보")
+            if str(row.get(k) or "").strip()
+        )
+        st.markdown(
+            f'### {block_id} <span style="font-size:var(--fs-2)">{chips}</span>',
+            unsafe_allow_html=True,
+        )
+        st.caption(str(row["제목"]))
+    else:
+        st.markdown(f"### {block_id}")
 
     tab_hist, tab_tag, tab_draft, tab_alert = st.tabs(
         ["주차별 진행 (F4)", "지식 매핑 (F3)", "1차 초안 (F5)", "일정 경보 (F21)"]
@@ -260,4 +274,4 @@ def render() -> None:
             format_func=lambda i: f"{i} — {next(r['제목'] for r in rows if r['ID'] == i)}",
             key="pick_block",
         )
-        _detail(picked)
+        _detail(picked, next((r for r in rows if r["ID"] == picked), None))

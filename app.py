@@ -14,8 +14,12 @@ from config.settings import secrets
 from views import inbox as inbox_view
 from views import ledger as ledger_view
 from views import settings as settings_view
+from views import theme
 
 st.set_page_config(page_title="회의자료·지식화", page_icon="📋", layout="wide")
+
+# 시안 토큰을 입힌다 (SD). 화면을 그리기 전에 한 번만.
+theme.apply()
 
 
 def home() -> None:
