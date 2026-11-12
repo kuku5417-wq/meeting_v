@@ -21,7 +21,7 @@
 
 ## 다음 할 일
 
-1. **`Datamanager` 프로젝트 위치 — S1·S2를 막고 있다.** 구간 코드 `ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`의 정의와 날짜 칸을 거기서 가져와야 §10 표를 정의하고 단계를 계산할 수 있다.
+1. **§10-2 네 가지 — S1·S2를 막고 있다.** `data_manager`에서 출처는 확인했다(`milestone`+`trial_schedule`). 남은 것은 `WF`가 진수인가 공사완료인가, 어느 계열(PLAN/PROS/PERF)을 쓰는가, 시운전을 회차로 보는가, 겹칠 때 우선순위.
 2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. **§10을 기다리는 동안 할 수 있는 일이다.**
 3. **P2 S1** — 기준정보 15표 선언. §9는 끝났고 §10만 남았다. `stage`를 파생 값으로 둘지가 모델 선언에 걸리므로 §10 뒤에 간다. 상세는 "P2 단계별 상세 — S1" 절.
 
@@ -60,7 +60,7 @@ flowchart LR
 - [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
 - [x] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`를 `main`에 병합하고 `origin/main`에 push (`bdebcc9..1f83269`). 미push 상태였던 이전 3커밋(`6720745`·`f27d8e4`·`45e4f0f`)도 함께 올라갔다
 - [x] `SPEC.md` §9 정해야 할 것 4건 확정 (2026-11-12) — 9-1 약호 `174km3 LNG` 꼴 / 9-2 적재량까지 유지 / 9-3 계약 순서 + 대책 반영은 호선 ID로 / 9-4 단계 4개 + 일정에서 계산(§10 선행). 결정 브리핑: https://claude.ai/artifact/AGSoCiE1p1GLDdY1jhPXsD
-- [~] `SPEC.md` §10 호선 이벤트 일정 정의 — 표 형태·출처·받을 이벤트는 정해졌다. **남은 것은 `Datamanager` 프로젝트의 구간 코드(ST·GasT·AC·Cold·WF·DL) 정의** — 저장소 위치를 받아야 한다. **P2 S1·S2의 선행**
+- [~] `SPEC.md` §10 호선 이벤트 일정 정의 — 출처 확인 완료(`data_manager`의 `milestone`+`trial_schedule`, §10-1). **남은 것은 §10-2 네 가지** (WF 해석·계열 선택·회차·겹침). **P2 S1·S2의 선행**
 - [ ] `requirements.md` §2 미결 2건 확정 — `slide_object.props` 타입별 칸 분리 여부, 나머지 운영 표 정의 (**P3 S5·S7의 선행**)
 - [ ] 시안 중 확정안 표시, 나머지는 `docs/_시안/보관/`으로
 
@@ -281,12 +281,21 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
 정해진 것: **별도 표**(hull에 칸을 더하지 않는다) · **사내 시스템(pjtlist 등)에서 들어온다**(사람 입력 아님) · 받을 이벤트는 **시운전 출항·귀항 / 앵카링 시작·해제 / Layup 시작·해제**(안벽은 나머지로 계산하므로 받지 않는다).
 
-**막혀 있는 것 — `Datamanager` 프로젝트를 봐야 한다**
+**`data_manager`에서 확인했다** (<https://github.com/kuku5417-wq/data_manager>, `DATA_SCHEMA.md`)
 
-1. 구간 코드 `ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`의 정의와 날짜 칸. **그 저장소·폴더 위치를 아직 받지 못했다**
-2. 표 이름·칸 이름 — §9-A에 따라 짓지 않는다. Datamanager 헤더를 따를지 정해야 한다
-3. 구간이 겹치거나(시운전 중 앵카링) 날짜가 비면 무엇으로 두는가
-4. 시운전·앵카링이 여러 번이면 회차를 행으로 쌓는가
+구간 코드는 한 표에 있지 않다. **두 표를 함께 써야 한다.**
+
+- `milestone.parquet` — 호선 마일스톤. MySQL `pjtevnt` 미러, **wide 그대로**. 키 `project`(ensure_sn), `PLAN`/`PROS`/`PERF` × 15 이벤트. `COLDFROM`·`GASFROM`·`STFROM`·`WF`(진수)·`DL`(인도)이 여기 있다
+- `trial_schedule.parquet` — 시운전 **항차**. `PJT`·`일정구분`·`출항`·`복귀`. **`AC`는 여기 `일정구분` 값이다** (`LC~GT+1`·`AC`·`통합시운전`·`ST,DP`·`인도준비`)
+
+**남은 네 가지** (상세는 `SPEC.md` §10-2)
+
+1. **`WF`가 진수인가 공사완료인가.** `milestone.WF`는 진수다. `pjtlist`에는 `WORKFINISH`가 따로 있다. 진수로 보면 `WF~DL`이 거의 전부를 덮어 **안벽기간이 남지 않는다**
+2. `PLAN`·`PROS`·`PERF` 중 어느 계열을 쓰는가
+3. 시운전을 `milestone`의 한 구간으로 보는가, `trial_schedule`의 회차로 보는가
+4. 구간이 겹칠 때의 우선순위
+
+**덤으로 확인된 것** — `pjtlist.parquet`가 우리 `hull`의 실데이터 출처다. `SHIPNUM`↔`id`, `SEQNO`↔`series_no`, `MAINHULLNUM`↔`sister_group_id` 등으로 거의 1:1 대응한다. `data_manager/sn_util.py`의 `ensure_sn`이 `code-gen.md` §4③과 같은 동작이라, S2의 `modules/sn_util.py`는 그 규칙을 따른다.
 
 기준정보 15종에 없는 표이므로, 만들기 전에 `requirements.md`에 먼저 적어야 한다 (`CLAUDE.md` §8-7).
 

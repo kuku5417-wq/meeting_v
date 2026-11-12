@@ -86,7 +86,7 @@ flowchart LR
 | `Layup` | `WF` ~ `DL` |
 | `인도선` | 인도 완료. §7-7이 이 값으로 인도일을 확인한다 |
 
-구간 코드(`ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`)의 정의는 **Datamanager 프로젝트**를 따른다.
+구간 코드(`ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`)의 출처는 `data_manager`의 `milestone.parquet`과 `trial_schedule.parquet`이다 (§10-1).
 
 **이 값은 사람이 고르지 않는다.** 호선 이벤트 일정에서 **입력 시 계산으로 추정한다.**
 즉 `stage`는 손으로 적는 값이 아니라 **일정에서 나오는 파생 값**이고, 그 일정은 **사내 시스템(pjtlist 등)에서 들어온다.**
@@ -231,9 +231,9 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 
 ## 10. 정해야 할 것 — 호선 이벤트 일정
 
-§9-4가 여기에 걸려 있다. **단계를 일정에서 계산하려면 그 일정이 있어야 하는데, 지금 저장소에 없다.**
+§9-4가 여기에 걸려 있다. 일정의 출처는 **`data_manager`**로 확인됐다(10-1). 남은 것은 10-2의 네 가지다.
 
-지금 호선이 가진 날짜는 `hull.delivery_date`(인도일) **하나뿐**이다. 그것만으로는 안벽·시운전·앵카링·Layup을 가를 수 없다.
+이 저장소가 가진 날짜는 `hull.delivery_date`(인도일) **하나뿐**이라, 사내망 표를 받아야 구간을 가를 수 있다.
 
 **정해진 것 (2026-11-12)**
 
@@ -244,11 +244,46 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 | 어떤 표인가 | **별도 표.** 호선 1건에 이벤트 여러 건. `hull`에 날짜 칸을 더하지 않는다 — 헤더가 바뀌어 §9-A에 걸린다 |
 | 과거 호선 | 진행 호선이 아닌 것(설계·건조)은 **다루지 않는다.** 샘플에서도 뺐다(§6). 인도선은 `인도선` 값을 그대로 쓴다 |
 
-**아직 모르는 것 — 이것이 §9-4 적용을 막고 있다**
+### 10-1. `data_manager`에서 확인한 것 (2026-11-12)
 
-1. **구간 코드의 정의.** `ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`이 각각 무엇이고, 어떤 날짜 칸으로 들어오는가. **Datamanager 프로젝트**를 봐야 한다 — 그 저장소·폴더가 어디인지 아직 받지 못했다
-2. **표 이름과 칸 이름.** §9-A에 따라 내가 짓지 않는다. Datamanager의 헤더를 그대로 쓸지, 새로 정할지
-3. **계산 규칙의 경계.** 구간이 겹치거나(시운전 중 앵카링) 날짜가 비면 무엇으로 두는가
-4. **회차.** 시운전·앵카링이 여러 번이면 각각을 행으로 쌓는가
+출처: <https://github.com/kuku5417-wq/data_manager> 의 `DATA_SCHEMA.md`.
+**구간 코드는 한 표에 있지 않다. 두 표를 함께 써야 한다.**
+
+**`milestone.parquet`** — 호선 마일스톤 (MySQL `pjtevnt` 미러, **wide 그대로. unpivot 하지 않는다**)
+
+| | |
+|---|---|
+| 키 | `project` — 호선번호, `ensure_sn` 적용 |
+| 칸 | `PLAN<EVT>` 계획일 · `PROS<EVT>` 예정일(전망) · `PERF<EVT>` 실적일 — 15 이벤트 × 3계열 = 45칸 + 키 = 46칸 |
+| 이벤트 15종 | `LC` 기공 · `SP` · `BT` · `GT` · `CMR` · `COLDFROM`/`COLDTO` · `IE` · `MT` · `GASFROM`/`GASTO` · `STFROM`/`STTO` · `WF` 진수 · `DL` 인도 |
+
+**`trial_schedule.parquet`** — 시운전 **항차** 일정. 회차가 행으로 쌓인다
+
+| | |
+|---|---|
+| 칸 | `PJT` 호선번호 · `일정구분` · `출항` · `복귀` · `대기`(현 실파일 전량 결측) |
+| `일정구분` 값 | `LC~GT+1` · **`AC`** · `통합시운전` · `ST,DP` · `인도준비` 등 |
+
+**구간 코드가 어디서 오는가**
+
+| 우리 단계 | 사용자 표기 | 실제 출처 |
+|---|---|---|
+| `시운전기간` | ST + GasT | `milestone`의 `STFROM`/`STTO`·`GASFROM`/`GASTO`, 또는 `trial_schedule`의 `ST,DP`·`통합시운전` 항차 |
+| `앵카링기간` | AC + Cold | **`AC`는 `trial_schedule.일정구분`** / **`Cold`는 `milestone`의 `COLDFROM`/`COLDTO`** — 서로 다른 표다 |
+| `Layup` | WF ~ DL | `milestone`의 `WF`·`DL`, **또는** `pjtlist`의 `WORKFINISH` ~ `milestone`의 `DL` (아래 참조) |
+| `안벽기간` | 나머지 | 위 셋을 뺀 구간 |
+
+### 10-2. 아직 모르는 것 — 이것이 §9-4 적용을 막고 있다
+
+1. **`WF`가 어느 쪽인가.** `milestone`의 `WF`는 **진수**다. 그런데 `pjtlist`에는 `WORKFINISH`(공사 완료일)가 따로 있다. Layup을 "공사 끝나고 인도까지 대기 계류"로 본다면 `WORKFINISH ~ DL`이 맞고, 진수로 본다면 `WF ~ DL`이 호선 생애의 거의 전부를 덮어 **안벽기간이 남지 않는다.** 둘 중 어느 쪽인가
+2. **어느 계열을 쓰는가.** `PLAN`(계획) · `PROS`(전망) · `PERF`(실적) 중. 실적이 있으면 실적, 없으면 전망, 없으면 계획 순으로 내려가는 것이 자연스럽지만 정해야 한다
+3. **시운전을 어느 표로 보는가.** `milestone`의 `STFROM~STTO`(호선 단위 한 구간)인가, `trial_schedule`의 항차(회차별 출항~복귀)인가. 주간 회의에서 "지금 몇 항차"를 보려면 후자가 필요하다
+4. **구간이 겹치면.** 시운전 항차 사이에 앵카링이 끼는 식으로 겹칠 때의 우선순위
+
+### 10-3. 덤으로 확인된 것 — 사내망 전환에 쓴다
+
+- **`pjtlist.parquet`가 우리 `hull`의 실데이터 출처다.** `SHIPNUM`↔`id` · `TITLE`↔`title` · `SHIPTYPE`↔`ship_type_id` · `TYPEMODEL`↔모델 · `REGOWNER`↔`owner_id` · `MAINHULLNUM`↔`sister_group_id` · **`SEQNO`↔`series_no`** · `SHIPCLASS`↔`ship_class` · `DOCK`↔`dock`. §3-2가 "pjtlist 동기화로 들어온 칸"이라 적은 것이 이것이다.
+- **§9-3의 `series_no`는 사실 `pjtlist.SEQNO`에서 온다.** 계약 순서인지는 운영 DB가 정한다 — 우리가 매기는 값이 아니다.
+- **`ensure_sn`이 이미 있다.** `data_manager/sn_util.py`가 `2601`·`S2601`·`SN2601` → `SN2601`로 수렴시킨다. `code-gen.md` §4③이 요구하는 것과 같은 동작이므로, S2에서 만들 `modules/sn_util.py`는 **이 함수와 같은 규칙으로** 쓴다.
 
 이 표는 기준정보 15종에 없으므로, 만들기 전에 `requirements.md` §1-1 또는 §1-2에 먼저 적어야 한다 (`CLAUDE.md` §8-7).
