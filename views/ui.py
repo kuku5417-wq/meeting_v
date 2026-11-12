@@ -4,9 +4,12 @@
 
 | 하는 일 | 정한 방식 | 여기서 |
 |---|---|---|
-| 목록 | 흰 카드 그룹 목록, 선택 행 왼쪽 파란 막대 | `card_list()` |
+| 목록 | 흰 카드 그룹 목록, 선택 행 왼쪽 파란 막대 | `card_list()` · 고르지 않는 카드 한 장은 `card()` |
 | 걸러 보기 | 칩 + 찾기 칸 | `filter_pills()` · `search_box()` |
 | 여러 건 처리 | 체크한 뒤 일괄 동작 | `check_list()` |
+
+**사람이 적은 글은 모두 `html.escape` 를 거친다.** 제목·설명에 `<` 가 들어와도 카드가 깨지지
+않아야 한다. 칩처럼 **우리가 만든 HTML** 만 `chips` 로 따로 받는다.
 
 **주 버튼은 한 화면에 하나다** (규칙 2-5). 여기 컴포넌트는 주 버튼을 쓰지 않는다 —
 화면이 제 주 동작에만 `type="primary"` 를 준다.
@@ -46,6 +49,22 @@ def search_box(key: str, placeholder: str = "제목·호선·장비로 찾기") 
     return st.text_input("찾기", key=key, placeholder=placeholder, label_visibility="collapsed").strip()
 
 
+def card(title: str, meta: str, chips: str = "", on: bool = False) -> None:
+    """고르지 않는 카드 한 장. 이력·태그처럼 목록이지만 선택이 없는 곳에 쓴다.
+
+    `title`·`meta` 는 사람이 적은 글이라 이스케이프하고, `chips` 만 HTML 로 그대로 넣는다.
+    """
+    head = html.escape(title)
+    if chips:
+        head = f"{head} {chips}"
+    st.markdown(
+        f'<div class="sd-card{" sd-on" if on else ""}">'
+        f'<div class="sd-t">{head}</div>'
+        f'<div class="sd-m">{html.escape(meta)}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def card_list(
     rows: list[dict[str, Any]],
     id_key: str,
@@ -55,30 +74,33 @@ def card_list(
     selected: str | None = None,
     empty: str = "보여 줄 것이 없다",
     limit: int = 50,
+    chips: Callable[[dict], str] | None = None,
+    auto_select: bool = True,
 ) -> str | None:
     """흰 카드 목록. 고른 카드는 왼쪽에 파란 막대가 선다.
 
-    돌려주는 것: 고른 행의 `id_key` 값. 처음에는 첫 줄이 골라져 있다.
-    `title`·`meta` 는 행을 글로 바꾸는 함수다 — HTML 은 여기서 이스케이프한다.
+    돌려주는 것: 고른 행의 `id_key` 값.
+    `title`·`meta` 는 행을 **글**로 바꾸는 함수다 — 여기서 이스케이프한다.
+    칩처럼 우리가 만든 HTML 은 `chips` 로 따로 준다.
+    `auto_select=False` 면 아직 아무것도 열지 않은 상태를 그대로 둔다 (`None` 을 돌려준다).
+    고른 줄은 `st.session_state[f"{key}__sel"]` 에 있다 — 화면이 밖에서 바꿀 수 있다.
     """
     if not rows:
         st.caption(empty)
         return None
 
-    picked = st.session_state.get(f"{key}__sel") or selected or str(rows[0][id_key])
-    if picked not in {str(r[id_key]) for r in rows}:
-        picked = str(rows[0][id_key])
+    ids = {str(r[id_key]) for r in rows}
+    picked = st.session_state.get(f"{key}__sel") or selected
+    if picked not in ids:
+        picked = str(rows[0][id_key]) if auto_select else None
 
     for row in rows[:limit]:
         rid = str(row[id_key])
-        left, right = st.columns([11, 1], vertical_alignment="center")
-        left.markdown(
-            f'<div class="sd-card{" sd-on" if rid == picked else ""}">'
-            f'<div class="sd-t">{html.escape(title(row))}</div>'
-            f'<div class="sd-m">{meta(row)}</div></div>',
-            unsafe_allow_html=True,
-        )
-        if right.button("", key=f"{key}__{rid}", icon=":material/chevron_right:", help="이 줄을 연다"):
+        left, right = st.columns([9, 2], vertical_alignment="center")
+        with left:
+            card(title(row), meta(row), chips(row) if chips else "", on=rid == picked)
+        # 아이콘만 단독으로 두지 않는다 (디자인_규칙 2-4) — 글자를 함께 쓴다
+        if right.button("열기", key=f"{key}__{rid}", icon=":material/chevron_right:"):
             st.session_state[f"{key}__sel"] = rid
             st.rerun()
 

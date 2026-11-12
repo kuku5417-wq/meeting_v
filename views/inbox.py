@@ -46,12 +46,14 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
             if c.get("quote"):
                 st.markdown(theme.evidence(f"근거: {c['quote']}"), unsafe_allow_html=True)
 
-            # 이 화면의 주 버튼은 「저장」 하나다 (규칙 2-5). 후보마다 반복되는 이것은 보조 버튼.
+            # 이 화면의 주 버튼은 「기록하고 다음」 하나다 (규칙 2-5).
+            # 후보마다 반복되는 이것은 보조 버튼이고, 아이콘은 원장의 「등록」과 같은 `add` 다
+            # — `arrow_forward` 는 「다음 일로 넘어가기」에만 쓴다 (규칙 2-4 "같은 뜻에 같은 아이콘").
             done_key = f"done_{memo_id}_{i}"
             if st.session_state.get(done_key):
                 st.caption(f"{st.session_state[done_key]} 로 등록했다 — 이슈 원장에서 볼 수 있다")
             elif st.button(
-                "이슈로 등록", key=f"cr_{memo_id}_{i}", icon=":material/arrow_forward:",
+                "이슈로 등록", key=f"cr_{memo_id}_{i}", icon=":material/add:",
                 disabled=not title.strip(), help="제목을 적으면 누를 수 있다",
             ):
                 bid = extract.register(
@@ -89,6 +91,9 @@ def render() -> None:
                    disabled=not raw.strip(), help="메모를 붙여넣으면 누를 수 있다"):
         mid = extract.save_memo(raw)
         st.session_state["last_memo"] = mid
+        # 아래 「최근 메모」목록이 **먼저 고른 줄**을 기억하므로, 거기도 새 메모로 옮긴다.
+        # 옮기지 않으면 목록이 옛 메모를 돌려주어 방금 적은 메모가 화면에서 밀린다.
+        st.session_state["memo_list__sel"] = mid
         st.success(f"메모 저장 — {mid[:8]}")
 
     if not is_configured():
@@ -102,7 +107,7 @@ def render() -> None:
         st.code(text, language=None)
 
         if is_configured():
-            if st.button("AI 로 정리"):
+            if st.button("AI 로 정리", icon=":material/auto_awesome:"):
                 try:
                     with st.spinner("사내 LLM 이 메모를 정리하는 중"):
                         kept, dropped = extract.extract(text)
@@ -132,13 +137,15 @@ def render() -> None:
     st.markdown("**최근 메모**")
     # 목록은 카드 그룹이다 (디자인_규칙 §3). 고르면 그 메모로 바로 넘어간다 —
     # 표·고르기·버튼 셋으로 나누지 않는다.
+    # 아직 아무 메모도 열지 않았으면 **저절로 열지 않는다** (`auto_select=False`).
     rows = extract.memos()
     pick = ui.card_list(
         rows, "id",
-        title=lambda r: r["글"] or "(빈 메모)",
-        meta=lambda r: " · ".join(x for x in (r["적은 때"], r["판"]) if x),
+        title=lambda r: str(r["글"] or "(빈 메모)"),
+        meta=lambda r: " · ".join(str(x) for x in (r["적은 때"], r["판"]) if x),
         key="memo_list",
         selected=memo_id,
+        auto_select=False,
         empty="아직 저장한 메모가 없다",
     )
     if pick and pick != memo_id:

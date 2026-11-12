@@ -49,8 +49,21 @@ def _key(row: dict[str, Any], pk: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(str(row.get(c, "") or "").strip() for c in pk)
 
 
-def _save(name: str, cls: type, before: pd.DataFrame, after: pd.DataFrame) -> dict[str, int]:
-    """편집 결과를 DB 에 반영한다. 기본키로 더하기·고치기·지우기를 가른다."""
+def _restore(name: str, cls: type, rows: list[dict[str, Any]]) -> None:
+    """지운 줄을 되돌린다 (디자인_규칙 §3 "삭제·취소: 바로 실행 + 되돌리기")."""
+    with session() as s:
+        for row in rows:
+            s.add(cls(**seed.to_values(name, cls, row)))
+        s.commit()
+
+
+def _save(
+    name: str, cls: type, before: pd.DataFrame, after: pd.DataFrame
+) -> tuple[dict[str, int], list[dict[str, Any]]]:
+    """편집 결과를 DB 에 반영한다. 기본키로 더하기·고치기·지우기를 가른다.
+
+    돌려주는 것: 건수와 **지운 줄들**. 지운 줄은 되돌리기에 쓰므로 그대로 넘긴다.
+    """
     pk = _pk(cls)
     cols = _cols(cls)
     before_rows = {_key(r, pk): r for r in before.to_dict("records")}
@@ -62,13 +75,14 @@ def _save(name: str, cls: type, before: pd.DataFrame, after: pd.DataFrame) -> di
             continue  # 기본키가 비어 있는 줄은 아직 쓰는 중이다
         after_rows[key] = clean
 
-    added = changed = removed = 0
+    added = changed = 0
+    gone: list[dict[str, Any]] = []
     with session() as s:
         for key in before_rows.keys() - after_rows.keys():
             obj = s.get(cls, key if len(key) > 1 else key[0])
             if obj is not None:
                 s.delete(obj)
-                removed += 1
+                gone.append(before_rows[key])
         for key, row in after_rows.items():
             values = seed.to_values(name, cls, row)
             if key in before_rows:
@@ -82,7 +96,7 @@ def _save(name: str, cls: type, before: pd.DataFrame, after: pd.DataFrame) -> di
                 s.add(cls(**values))
                 added += 1
         s.commit()
-    return {"added": added, "changed": changed, "removed": removed}
+    return {"added": added, "changed": changed, "removed": len(gone)}, gone
 
 
 def render() -> None:
@@ -112,23 +126,42 @@ def render() -> None:
             + " — 호선 이벤트 일정에서 계산되는 값이라 손으로 고치지 않는다 (`SPEC.md` §3-3)."
         )
 
+    # 되돌리기를 하면 표 위젯이 기억하는 「지운 줄」을 비워야 한다 — 그대로 두면 되살린 줄을
+    # 다음 그림에서 또 지운다. 위젯 key 에 판 번호를 붙여 새 위젯으로 만든다.
+    ver = int(st.session_state.get(f"ver_{name}", 0))
     before = _read(cls)
     after = st.data_editor(
         before,
         num_rows="dynamic",
         use_container_width=True,
         disabled=locked,
-        key=f"editor_{name}",
+        key=f"editor_{name}_{ver}",
     )
 
     # 자동 저장 — 저장 버튼을 두지 않는다 (디자인_규칙 §3 "저장").
     # 고치면 Streamlit 이 다시 돌고, 그때 바뀐 줄만 쓴다. 같으면 아무것도 쓰지 않는다.
-    done = _save(name, cls, before, after)
+    done, gone = _save(name, cls, before, after)
     if any(done.values()):
         st.toast(
             f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}",
             icon=":material/check:",
         )
+    if gone:
+        st.session_state[f"undo_{name}"] = gone
+    elif any(done.values()):
+        st.session_state.pop(f"undo_{name}", None)  # 다음 편집으로 넘어갔으면 되돌리기를 접는다
+
+    # 삭제는 확인을 묻지 않고 바로 하고 되돌리기를 준다 (디자인_규칙 §3 "삭제·취소", 2-6).
+    undo = st.session_state.get(f"undo_{name}")
+    if undo:
+        col1, col2 = st.columns([4, 1], vertical_alignment="center")
+        col1.warning(f"{name} 에서 {len(undo)}행을 지웠다.", icon=":material/delete:")
+        if col2.button("되돌리기", key=f"undo_{name}_btn", icon=":material/undo:"):
+            _restore(name, cls, undo)
+            st.session_state.pop(f"undo_{name}", None)
+            st.session_state[f"ver_{name}"] = ver + 1
+            st.toast(f"{len(undo)}행 되돌렸다", icon=":material/check:")
+            st.rerun()
 
     st.divider()
     st.subheader("재시드")
@@ -140,5 +173,9 @@ def render() -> None:
     if st.button("CSV 로 재시드", disabled=not ok, key="reseed",
                  help="위 칸을 켜야 누를 수 있다 — 지금 DB 의 값이 지워진다"):
         loaded = seed.seed_masters(force=True)
+        # CSV 값으로 전부 덮었으니 아까 지운 줄의 되돌리기는 뜻이 없다
+        for n in TABLES:
+            st.session_state.pop(f"undo_{n}", None)
+            st.session_state[f"ver_{n}"] = int(st.session_state.get(f"ver_{n}", 0)) + 1
         st.toast(f"재시드 완료 — {sum(loaded.values())}행 / {len(loaded)}표", icon=":material/check:")
         st.rerun()

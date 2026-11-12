@@ -70,21 +70,17 @@ def _tab_history(block_id: str) -> None:
         st.caption("아직 적은 진행이 없다")
         return
     for r in rows:
-        st.markdown(
-            f'<div class="sd-card"><div class="sd-t">{r["한 줄"]}</div>'
-            f'<div class="sd-m">{r["주차"]} · {r["상태"]} · {r["적은 때"]}</div></div>',
-            unsafe_allow_html=True,
-        )
+        ui.card(str(r["한 줄"]), f'{r["주차"]} · {r["상태"]} · {r["적은 때"]}')
 
 
 def _tab_tags(block_id: str) -> None:
     rows = issues.tags(block_id)
     if rows:
         for r in rows:
-            st.markdown(
-                f'<div class="sd-card"><div class="sd-t">{r["현장 표기"]} {theme.chip(r["상태"])}</div>'
-                f'<div class="sd-m">{r["갈래"]} · {r["연결"] or "기준정보에 없다"}</div></div>',
-                unsafe_allow_html=True,
+            ui.card(
+                str(r["현장 표기"]),
+                f'{r["갈래"]} · {r["연결"] or "기준정보에 없다"}',
+                chips=theme.chip(str(r["상태"])),
             )
         if any(r["상태"] == "미등록" for r in rows):
             st.caption(
@@ -307,14 +303,14 @@ def render() -> None:
     picked = ui.card_list(
         rows, "ID",
         title=lambda r: f"{r['ID']}  {r['제목']}",
+        # 사람이 적은 글은 `ui.card_list` 가 이스케이프한다. 칩 HTML 만 `chips` 로 따로 준다.
         meta=lambda r: " · ".join(
-            x for x in (
-                r["호선"], r["장비"], r["부서"],
-                theme.chip(str(r["상태"])),
-                theme.chip(str(r["경보"])) if r["경보"] else "",
-                f"매핑 {r['매핑']}",
-                r["금주 진행"],
+            str(x) for x in (
+                r["호선"], r["장비"], r["부서"], f"매핑 {r['매핑']}", r["금주 진행"],
             ) if x
+        ),
+        chips=lambda r: " ".join(
+            theme.chip(str(r[k])) for k in ("상태", "경보") if str(r.get(k) or "").strip()
         ),
         key="ledger_list",
         empty="조건에 맞는 이슈가 없다. 아래에서 등록할 수 있다.",

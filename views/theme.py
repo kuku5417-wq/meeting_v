@@ -72,6 +72,7 @@ code, pre, .stCode { font-family: var(--mono); }
    이 글꼴은 Streamlit 이 함께 넣어 둬서 사외망·사내망 모두 뜬다. */
 [data-testid="stIconMaterial"],
 [data-testid="stAlertDynamicIcon"],
+[data-testid="stToastDynamicIcon"],
 [data-testid="stElementToolbarButtonIcon"] {
   font-family: "Material Symbols Rounded";
 }
