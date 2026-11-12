@@ -9,12 +9,11 @@
 """
 from __future__ import annotations
 
-import pandas as pd
 import streamlit as st
 
 from modules import extract, issues
 from modules.llm_client import LLMNotConfigured, is_configured
-from views import theme
+from views import theme, ui
 
 
 def _departments() -> dict[str, str]:
@@ -47,7 +46,14 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
             if c.get("quote"):
                 st.markdown(theme.evidence(f"근거: {c['quote']}"), unsafe_allow_html=True)
 
-            if st.button("이슈로 등록", key=f"cr_{memo_id}_{i}", type="primary"):
+            # 이 화면의 주 버튼은 「저장」 하나다 (규칙 2-5). 후보마다 반복되는 이것은 보조 버튼.
+            done_key = f"done_{memo_id}_{i}"
+            if st.session_state.get(done_key):
+                st.caption(f"{st.session_state[done_key]} 로 등록했다 — 이슈 원장에서 볼 수 있다")
+            elif st.button(
+                "이슈로 등록", key=f"cr_{memo_id}_{i}", icon=":material/arrow_forward:",
+                disabled=not title.strip(), help="제목을 적으면 누를 수 있다",
+            ):
                 bid = extract.register(
                     memo_id,
                     {**c, "title": title, "block_type": btype, "hull": hull,
@@ -55,7 +61,10 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
                      "department_id": None if dept == "(없음)" else dept},
                     by_ai=by_ai,
                 )
-                st.success(f"{bid} 등록 — 이슈 원장에서 볼 수 있다")
+                # 한 번 더 눌러 같은 후보가 두 번 들어가지 않게 자리를 바꾼다
+                st.session_state[done_key] = bid
+                st.toast(f"{bid} 등록", icon=":material/check:")
+                st.rerun()
 
 
 def render() -> None:
@@ -74,8 +83,10 @@ def render() -> None:
     )
 
     col1, col2 = st.columns([1, 3])
-    if col1.button("저장", type="primary", disabled=not raw.strip(),
-                   help="메모를 붙여넣으면 누를 수 있다"):
+    # 「다음 일로 넘어가기」 토큰 (디자인_규칙 §3) — 적으면 다음 칸(후보 확인)으로 간다.
+    # 이 화면의 유일한 주 버튼이다.
+    if col1.button("기록하고 다음", type="primary", icon=":material/arrow_forward:",
+                   disabled=not raw.strip(), help="메모를 붙여넣으면 누를 수 있다"):
         mid = extract.save_memo(raw)
         st.session_state["last_memo"] = mid
         st.success(f"메모 저장 — {mid[:8]}")
@@ -119,18 +130,19 @@ def render() -> None:
 
     st.divider()
     st.markdown("**최근 메모**")
+    # 목록은 카드 그룹이다 (디자인_규칙 §3). 고르면 그 메모로 바로 넘어간다 —
+    # 표·고르기·버튼 셋으로 나누지 않는다.
     rows = extract.memos()
-    if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        pick = st.selectbox(
-            "열어 볼 메모", [r["id"] for r in rows],
-            format_func=lambda i: f"{i[:8]} — {next(r['글'] for r in rows if r['id'] == i)[:40]}",
-            key="memo_pick",
-        )
-        if st.button("이 메모로 작업"):
-            st.session_state["last_memo"] = pick
-            st.session_state.pop("cands", None)
-            st.session_state.pop("dropped", None)
-            st.rerun()
-    else:
-        st.caption("아직 저장한 메모가 없다")
+    pick = ui.card_list(
+        rows, "id",
+        title=lambda r: r["글"] or "(빈 메모)",
+        meta=lambda r: " · ".join(x for x in (r["적은 때"], r["판"]) if x),
+        key="memo_list",
+        selected=memo_id,
+        empty="아직 저장한 메모가 없다",
+    )
+    if pick and pick != memo_id:
+        st.session_state["last_memo"] = pick
+        st.session_state.pop("cands", None)
+        st.session_state.pop("dropped", None)
+        st.rerun()

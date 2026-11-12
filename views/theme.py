@@ -120,6 +120,18 @@ h3 { font-size: var(--fs-3); }
   font-size: var(--fs-1); font-weight: var(--fw-strong); line-height: 1.7;
 }
 
+/* 카드 목록 — 디자인_규칙 §3 "목록: 흰 카드 그룹 목록, 선택 행 왼쪽 파란 막대" */
+.sd-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.sd-card.sd-on { border-left-color: var(--accent); background: var(--accent-soft); }
+.sd-card .sd-t { font-weight: var(--fw-strong); color: var(--fg); }
+.sd-card .sd-m { font-size: var(--fs-1); color: var(--muted); }
+
 /* 근거 표시 — 디자인_규칙 §3 "근거 표시: 노란 바탕(--warn-soft)" */
 .sd-evidence {
   background: var(--warn-soft);

@@ -93,6 +93,8 @@ def render() -> None:
     )
 
     counts = seed.counts()
+    # 15종은 칩으로 늘어놓기에 많다. 여기 선택은 **거르기가 아니라 자리 옮기기**라
+    # 디자인_규칙 §3 의 "걸러 보기: 칩 + 찾기 칸" 토큰을 쓰지 않는다.
     name = st.selectbox(
         "표",
         list(TABLES),
@@ -119,15 +121,14 @@ def render() -> None:
         key=f"editor_{name}",
     )
 
-    left, right = st.columns([1, 3])
-    if left.button("저장", type="primary", key=f"save_{name}"):
-        done = _save(name, cls, before, after)
-        if any(done.values()):
-            st.toast(f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}",
-                     icon=":material/check:")
-        else:
-            st.toast("바뀐 것이 없다", icon=":material/info:")
-        st.rerun()
+    # 자동 저장 — 저장 버튼을 두지 않는다 (디자인_규칙 §3 "저장").
+    # 고치면 Streamlit 이 다시 돌고, 그때 바뀐 줄만 쓴다. 같으면 아무것도 쓰지 않는다.
+    done = _save(name, cls, before, after)
+    if any(done.values()):
+        st.toast(
+            f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}",
+            icon=":material/check:",
+        )
 
     st.divider()
     st.subheader("재시드")

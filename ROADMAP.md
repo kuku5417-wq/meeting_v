@@ -394,14 +394,26 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 남은 것 — 아래 컴포넌트 토큰 4건이 그대로 필수로 남아 있다. [제안] 14건은 그 화면을 손댈 때 함께 본다
 (줄일 수 있는 요소 12개: 사이드바 개발 진단 4·상태 지표 5·고르는 방식 중복·기능 번호 라벨)
 
-**컴포넌트 토큰과 어긋나는 자리** (S5·S4를 다시 손대는 일이라 위 다섯보다 크다)
+**컴포넌트 토큰** — ✅ 2026-11-13 맞췄다. 방식은 `views/ui.py` 한 곳에 두고 화면은 부르기만 한다.
 
-| 하는 일 | 정한 방식 | 지금 | 양 |
-|---|---|---|---|
-| 목록 | 흰 카드 목록 + 선택 행 왼쪽 파란 막대 | `st.dataframe` | 5곳 |
-| 걸러 보기 | `st.pills` + 찾기 칸 | `selectbox` | 12곳 |
-| 저장 | 자동 저장, 저장 버튼 없음 | 저장 버튼 | 4곳 |
-| 주 버튼 | 한 화면에 하나 | `ledger` 5개 · `inbox` 2개 | — |
+| 하는 일 | 정한 방식 | 어디에 |
+|---|---|---|
+| 목록 | 흰 카드 목록 + 선택 행 왼쪽 파란 막대 | `ui.card_list()` — `st.columns([11,1])` + 카드 HTML + 여는 버튼 |
+| 걸러 보기 | 칩 + 찾기 칸 | `ui.filter_pills()` · `ui.search_box()`. **건수를 칩 안에 넣어 지표 5개를 없앴다** |
+| 여러 건 처리 | 체크한 뒤 일괄 동작 | `ui.check_list()` — `st.data_editor` 체크 칸, 값 칸은 잠근다 |
+| 저장 | 자동 저장, 저장 버튼 없음 | 설정은 고치면 바로 쓴다. 원장의 초안·경보는 `on_change` |
+| 주 버튼 | 한 화면에 하나 | `ledger` 등록 · `inbox` 「기록하고 다음」 · `settings` 0개 |
+
+확정한 방식은 `docs/디자인_규칙.md` §3 의 Streamlit 칸에도 적었다 — 다음 화면이 같은 것을 또 고르지 않게.
+
+**아직인 것** (`ui-reviewer` [제안] 쪽)
+
+- 사이드바의 개발 진단 4개와 홈의 개발 메모 — 업무 화면에 개발자 눈이 남아 있다
+- 앱 이름 h1 과 화면 h2 가 겹친다
+- 이슈 등록 폼이 원장·기록함 두 곳에 있고 `_departments()` 가 복붙돼 있다
+- 의미 색 쓰임(`dashboard`=accent · `연결됨`=ok · `미등록`=danger)이 뜻과 맞는지
+- 유형 칩이 영문(`issue`)이다
+- **날짜 고르기 토큰이 아직 "미정"** 인데 원장의 「직접 날짜」가 `st.date_input` 을 이미 쓴다
 
 **언제 하나** — 5와 컴포넌트 토큰은 그 화면을 손댈 때 함께 한다.
 
@@ -434,6 +446,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-13 | SD 5차 | 컴포넌트 토큰 4건을 맞췄다 — `views/ui.py` 신설(`card_list`·`filter_pills`·`search_box`·`check_list`), 원장·기록함 목록을 카드로, 거르기를 칩+찾기로, 일괄을 체크 칸으로, 저장을 자동 저장으로, 주 버튼을 화면당 하나로. 상태 지표 5개 제거, 탭·화면의 기능 번호 제거, 후보 중복 등록 막음 | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 화면 4개 임포트 통과 / 앱에서 카드 목록·파란 막대·칩 메타·건수 칩 확인 | |
 | 2026-11-13 | SD 4차 | 글꼴 서브셋을 앱에 넣음 — `static/fonts/` woff2 5개 + OFL 2건, `static/fonts.css`, `enableStaticServing` | `document.fonts` 로 Meeting Sans KR 400·600 **loaded** 확인, `fonts.check('400 14px "Meeting Sans KR"')` true / `design_check` 0건 / 진단 4개 EXIT=0 / 저장소 +840KB | |
 | 2026-11-13 | SD 3차 | `ui-reviewer` 1차 반려(필수 10건) 중 6건 수정 — 경보 칩 색·완료 표시·비활성 도움말·스피너·근거 노란 바탕·「종결」 선택 제한 | `design_check` 0건 / 진단 4개 EXIT=0 / 앱에서 사이드바 흰색(`rgb(255,255,255)`)·`--warn-soft` `#fbefd9` 로 풀림·예외 없음 / `_token_for` 가 "일정 임박 D+28"→signal, "기한 지남 D-72"→danger 로 맞음 | |
 | 2026-11-13 | SD 2차 | 흰 사이드바, `static/tokens.css` 신설(`theme.py`는 읽기만), `--sep`·`--warn-soft` 신설, 이모지 11건 → `:material/` 아이콘 | `design_check` **0건** / 진단 4개·`_check.py` EXIT=0 / 앱에서 흰 사이드바·지금 메뉴 강조·아이콘 글리프 확인 | |
