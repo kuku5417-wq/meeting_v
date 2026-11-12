@@ -11,11 +11,16 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
 import uuid
+from pathlib import Path
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from config.paths import DATA_DIR, photo_path
+
+from modules import milestone
 from modules import models as m
 from modules.db import session
 from modules.sn_util import ensure_sn
@@ -230,6 +235,7 @@ def ledger(status: str | None = None, department_id: str | None = None) -> list[
             ).scalars().first()
             n, total = mapping_score(s, b.id)
             dept = s.get(m.Department, b.owner_department_id) if b.owner_department_id else None
+            label, left, _ = _alert_of(s, b)
             out.append({
                 "ID": b.id,
                 "유형": b.block_type,
@@ -239,6 +245,8 @@ def ledger(status: str | None = None, department_id: str | None = None) -> list[
                 "제목": b.title,
                 "금주 진행": note or "",
                 "매핑": f"{n}/{total}",
+                "경보": f"{label} D{left:+d}" if label else (f"D{left:+d}" if left is not None else ""),
+                "초안": {"none": "", "wip": "작성 중", "ok": "완료"}.get(b.draft_state or "none", ""),
                 "상태": b.status,
             })
     return out
@@ -249,3 +257,178 @@ def counts() -> dict[str, int]:
     with session() as s:
         rows = s.execute(select(m.Block.status, func.count()).group_by(m.Block.status)).all()
         return {k: n for k, n in rows}
+
+
+# ── F21 일정 경보 ─────────────────────────────────────────────────────────
+DEFAULT_ALERT_DAYS = 14  # app_setting `alert_days:<이벤트>` 의 처음 값 (docs/03)
+DUE_EVENTS = ("", "STTO", "GASTO", "ACTO", "DL", "DATE")
+
+
+def hull_of(s: Session, block_id: str) -> str | None:
+    """그 이슈가 걸린 호선. 일정 경보의 기준이다."""
+    return s.execute(
+        select(m.BlockTag.target_id).where(
+            m.BlockTag.block_id == block_id,
+            m.BlockTag.kind == "hull",
+            m.BlockTag.target_id.is_not(None),
+            m.BlockTag.dismissed.is_not(True),
+        )
+    ).scalars().first()
+
+
+def set_due(block_id: str, due_event: str, due_date: datetime.date | None, alert_days: int) -> None:
+    """「~전 해결」 목표와 경보 일수를 정한다 (F21).
+
+    **이벤트 날짜는 저장하지 않는다.** 볼 때마다 `milestone` 에서 잡는다 (`SPEC.md` §10-2) —
+    일정이 당겨지면 경보가 저절로 다시 켜진다.
+    """
+    with session() as s:
+        b = s.get(m.Block, block_id)
+        b.due_event = due_event or None
+        b.due_date = due_date if due_event == "DATE" else None
+        b.alert_days = alert_days
+        s.commit()
+
+
+def _alert_of(s: Session, b: m.Block) -> tuple[str, int | None, datetime.date | None]:
+    if not b.due_event:
+        return "", None, None
+    target = b.due_date if b.due_event == "DATE" else None
+    if target is None:
+        hull = hull_of(s, b.id)
+        if hull:
+            target = milestone.due(b.due_event, hull)
+    label, left = milestone.alert(target, b.alert_days or DEFAULT_ALERT_DAYS)
+    return label, left, target
+
+
+def due_of(block_id: str) -> dict[str, object]:
+    """그 이슈의 목표·경보 한 벌 (화면용)."""
+    with session() as s:
+        b = s.get(m.Block, block_id)
+        label, left, target = _alert_of(s, b)
+        return {
+            "due_event": b.due_event or "",
+            "due_date": b.due_date,
+            "alert_days": b.alert_days or DEFAULT_ALERT_DAYS,
+            "target": target,
+            "label": label,
+            "left": left,
+            "hull": hull_of(s, b.id) or "",
+        }
+
+
+# ── F5 1차 초안 ───────────────────────────────────────────────────────────
+DRAFT_FIELDS = ("body", "cause_text", "action_text", "decision_needed")
+
+
+def draft(block_id: str) -> dict[str, object]:
+    with session() as s:
+        b = s.get(m.Block, block_id)
+        return {f: getattr(b, f) or "" for f in DRAFT_FIELDS} | {
+            "draft_state": b.draft_state or "none",
+            "title": b.title,
+            "important": bool(b.important),
+        }
+
+
+def save_draft(block_id: str, values: dict[str, str], done: bool) -> None:
+    """「상세 한 장」의 칸을 저장한다 (F5).
+
+    칸을 고치면 `wip`, 「초안 완료」를 누르면 `ok` 다 (`docs/03`).
+    """
+    with session() as s:
+        b = s.get(m.Block, block_id)
+        for f in DRAFT_FIELDS:
+            setattr(b, f, (values.get(f) or "").strip() or None)
+        b.draft_state = "ok" if done else "wip"
+        s.commit()
+
+
+PHOTO_ROLES = ("main", "before", "after")
+
+
+def attach_photo(block_id: str, name: str, data: bytes, role: str, caption: str = "") -> str:
+    """사진을 붙인다 (F5).
+
+    **원본은 그대로 저장하고 다시 건드리지 않는다** (`CLAUDE.md` §6-1).
+    파일 이름은 내용 해시라, 같은 사진을 두 번 올려도 한 자리에만 쓰인다.
+    마킹은 여기 굽지 않는다 — `annotation` 에 좌표 JSON 으로 따로 둔다.
+    """
+    sha = hashlib.sha256(data).hexdigest()
+    suffix = Path(name).suffix.lower() or ".bin"
+    path = photo_path(sha, suffix)
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    rel = path.relative_to(DATA_DIR).as_posix()  # 데이터 폴더 기준 — docs/03 그대로
+    with session() as s:
+        row = s.execute(select(m.Photo).where(m.Photo.sha256 == sha)).scalars().first()
+        if row is None:
+            row = m.Photo(id=_rid(), file_path=rel, sha256=sha, uploaded_by=None,
+                          taken_at=datetime.datetime.now())
+            s.add(row)
+            s.flush()
+        if s.get(m.PhotoLink, (row.id, block_id, role)) is None:
+            s.add(m.PhotoLink(photo_id=row.id, block_id=block_id, role=role,
+                              caption=(caption or "").strip()[:80] or None))
+        s.commit()
+        return row.id
+
+
+def photos(block_id: str) -> list[dict[str, str]]:
+    with session() as s:
+        rows = s.execute(
+            select(m.PhotoLink, m.Photo)
+            .join(m.Photo, m.Photo.id == m.PhotoLink.photo_id)
+            .where(m.PhotoLink.block_id == block_id)
+        ).all()
+        return [
+            {"role": link.role, "caption": link.caption or "",
+             "path": str(DATA_DIR / photo.file_path), "sha": photo.sha256[:12]}
+            for link, photo in rows
+        ]
+
+
+# ── F23 일괄 정리 ─────────────────────────────────────────────────────────
+def bulk_update(
+    block_ids: list[str],
+    department_id: str | None = None,
+    status: str | None = None,
+    important: bool | None = None,
+) -> int:
+    """여러 건의 담당 부서·상태·중요를 한꺼번에 바꾼다 (F23).
+
+    **이관해도 ID 는 그대로다** (`CLAUDE.md` §6-8) — `owner_department_id` 만 바뀐다.
+    상태를 바꾸면 주차별 진행에 한 줄이 남는다.
+    """
+    now = datetime.datetime.now()
+    changed = 0
+    with session() as s:
+        week = ensure_week(s)
+        for bid in block_ids:
+            b = s.get(m.Block, bid)
+            if b is None:
+                continue
+            touched = []
+            if department_id is not None and b.owner_department_id != department_id:
+                b.owner_department_id = department_id
+                touched.append("담당 부서")
+            if status is not None and b.status != status:
+                b.status = status
+                touched.append("상태")
+            if important is not None and bool(b.important) != important:
+                b.important = important
+                touched.append("중요")
+            if not touched:
+                continue
+            s.add(
+                m.BlockHistory(
+                    id=_rid(), block_id=bid, week_id=week.id,
+                    department_id=b.owner_department_id, status=b.status,
+                    note="일괄 정리 — " + "·".join(touched), created_at=now,
+                )
+            )
+            changed += 1
+        s.commit()
+    return changed

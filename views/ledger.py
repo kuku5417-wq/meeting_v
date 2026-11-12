@@ -8,6 +8,8 @@
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -21,6 +23,34 @@ def _departments() -> dict[str, str]:
     with session() as s:
         rows = s.execute(select(m.Department).order_by(m.Department.order_no)).scalars().all()
         return {r.id: r.name for r in rows}
+
+
+def _bulk(rows: list[dict[str, object]], depts: dict[str, str]) -> None:
+    """F23 — 여러 건을 골라 담당 부서·상태·중요를 한꺼번에 바꾼다."""
+    with st.expander("일괄 정리 (F23)"):
+        st.caption("이관해도 ID 는 그대로다. 바뀐 것은 주차별 진행에 한 줄로 남는다.")
+        picked = st.multiselect(
+            "고른 이슈",
+            [r["ID"] for r in rows],
+            format_func=lambda i: f"{i} — {next(r['제목'] for r in rows if r['ID'] == i)}",
+            key="bulk_pick",
+        )
+        col1, col2, col3 = st.columns(3)
+        dept = col1.selectbox(
+            "담당 부서", ["(그대로)", *depts], format_func=lambda d: depts.get(d, d), key="bulk_dept"
+        )
+        status = col2.selectbox("상태", ["(그대로)", *issues.STATUSES], key="bulk_status")
+        important = col3.selectbox("중요", ["(그대로)", "중요", "보통"], key="bulk_important")
+
+        if st.button("한꺼번에 바꾸기", disabled=not picked, key="bulk_go", type="primary"):
+            n = issues.bulk_update(
+                picked,
+                department_id=None if dept == "(그대로)" else dept,
+                status=None if status == "(그대로)" else status,
+                important=None if important == "(그대로)" else (important == "중요"),
+            )
+            st.success(f"{n}건 바꿨다") if n else st.info("바뀐 것이 없다")
+            st.rerun()
 
 
 def _new_issue_form(depts: dict[str, str]) -> None:
@@ -49,10 +79,105 @@ def _new_issue_form(depts: dict[str, str]) -> None:
             st.rerun()
 
 
+def _draft_tab(block_id: str) -> None:
+    """F5 — 1차 초안 「상세 한 장」 + 사진."""
+    d = issues.draft(block_id)
+    st.caption(f"초안 상태: **{ {'none': '시작 전', 'wip': '작성 중', 'ok': '완료'}[d['draft_state']] }**")
+
+    values = {}
+    values["body"] = st.text_area("현상", value=d["body"], key=f"body_{block_id}")
+    col1, col2 = st.columns(2)
+    values["cause_text"] = col1.text_area("원인", value=d["cause_text"], key=f"cause_{block_id}")
+    values["action_text"] = col2.text_area("조치", value=d["action_text"], key=f"act_{block_id}")
+    values["decision_needed"] = st.text_input(
+        "결정 필요", value=d["decision_needed"], key=f"dec_{block_id}",
+        placeholder="회의에서 정해 주어야 하는 것",
+    )
+
+    col1, col2 = st.columns([1, 1])
+    if col1.button("저장", key=f"dsave_{block_id}"):
+        issues.save_draft(block_id, values, done=False)
+        st.rerun()
+    if col2.button("초안 완료", key=f"ddone_{block_id}", type="primary"):
+        issues.save_draft(block_id, values, done=True)
+        st.rerun()
+
+    st.divider()
+    st.markdown("**사진**")
+    st.caption("원본은 그대로 저장하고 다시 건드리지 않는다. 마킹은 사진 위에 굽지 않고 좌표로 따로 둔다.")
+
+    shots = issues.photos(block_id)
+    if shots:
+        cols = st.columns(min(3, len(shots)))
+        for col, p in zip(cols * ((len(shots) // 3) + 1), shots):
+            path = Path(p["path"])
+            if path.exists():
+                try:
+                    col.image(str(path), caption=f"{p['role']} · {p['caption']}", use_container_width=True)
+                except Exception:
+                    col.caption(f"{p['role']} · {p['caption']} ({p['sha']}) — 미리보기 불가")
+            else:
+                col.caption(f"{p['role']} · 파일 없음 ({p['sha']})")
+    else:
+        st.caption("아직 붙인 사진이 없다")
+
+    up = st.file_uploader("사진 올리기", type=["png", "jpg", "jpeg"], key=f"up_{block_id}")
+    col1, col2 = st.columns([1, 2])
+    role = col1.selectbox("구분", issues.PHOTO_ROLES, key=f"role_{block_id}")
+    cap = col2.text_input("설명", key=f"cap_{block_id}", max_chars=80)
+    if st.button("붙이기", key=f"attach_{block_id}", disabled=up is None):
+        issues.attach_photo(block_id, up.name, up.getvalue(), role, cap)
+        st.rerun()
+
+
+def _alert_tab(block_id: str) -> None:
+    """F21 — 「~전 해결」 목표와 경보."""
+    info = issues.due_of(block_id)
+    if not info["hull"]:
+        st.warning("호선이 매핑돼야 일정 경보가 걸린다. 「지식 매핑」 탭에서 호선을 이어 주십시오.", icon="⚠️")
+
+    col1, col2, col3 = st.columns(3)
+    evt = col1.selectbox(
+        "~전 해결", issues.DUE_EVENTS,
+        index=issues.DUE_EVENTS.index(info["due_event"]) if info["due_event"] in issues.DUE_EVENTS else 0,
+        format_func=lambda e: {"": "(없음)", "DATE": "직접 날짜"}.get(e, e),
+        key=f"evt_{block_id}",
+    )
+    day = col2.date_input("날짜", value=info["due_date"], key=f"day_{block_id}") if evt == "DATE" else None
+    days = col3.number_input("경보 일수 (D-n)", 1, 365, int(info["alert_days"]), key=f"days_{block_id}")
+
+    if st.button("목표 저장", key=f"due_{block_id}", type="primary"):
+        issues.set_due(block_id, evt, day, int(days))
+        st.rerun()
+
+    st.divider()
+    if info["target"]:
+        left = info["left"]
+        if info["label"] == "기한 지남":
+            st.error(f"**기한 지남** — 목표 {info['target']} (D{left:+d})", icon="🔴")
+        elif info["label"] == "일정 임박":
+            st.warning(f"**일정 임박** — 목표 {info['target']} (D{left:+d})", icon="🟠")
+        else:
+            st.info(f"목표 {info['target']} (D{left:+d})", icon="🗓️")
+        st.caption(
+            f"날짜는 저장하지 않는다. {info['hull']}의 일정에서 볼 때마다 다시 잡는다 — "
+            "일정이 당겨지면 경보가 저절로 다시 켜진다."
+        )
+    else:
+        st.caption("목표를 정하지 않았다")
+
+
 def _detail(block_id: str) -> None:
     st.markdown(f"### {block_id}")
 
-    tab_hist, tab_tag = st.tabs(["주차별 진행 (F4)", "지식 매핑 (F3)"])
+    tab_hist, tab_tag, tab_draft, tab_alert = st.tabs(
+        ["주차별 진행 (F4)", "지식 매핑 (F3)", "1차 초안 (F5)", "일정 경보 (F21)"]
+    )
+
+    with tab_draft:
+        _draft_tab(block_id)
+    with tab_alert:
+        _alert_tab(block_id)
 
     with tab_hist:
         note = st.text_input("이번 주 한 줄", key=f"note_{block_id}")
@@ -119,6 +244,10 @@ def render() -> None:
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     else:
         st.info("조건에 맞는 이슈가 없다. 아래에서 등록할 수 있다.", icon="📭")
+
+    if rows:
+        st.divider()
+        _bulk(rows, depts)
 
     st.divider()
     _new_issue_form(depts)

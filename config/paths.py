@@ -18,6 +18,9 @@ MOCKUPS_DIR = DOCS_DIR / "_시안" / "design" / "mockups"
 DATA_DIR = ROOT / "data"
 SAMPLES_DIR = DATA_DIR / "samples"
 MASTERS_DIR = SAMPLES_DIR / "masters"  # 기준정보 CSV 15종. 실데이터 전환 시 CSV만 교체
+# 사내 시스템 미러(milestone·pjtlist)를 사외망에서 대신하는 샘플 — requirements §1-4.
+# 사내망에서는 data_manager 의 parquet 을 그대로 읽는다. **전환 지점이다.**
+MIRROR_DIR = SAMPLES_DIR / "mirror"
 DB_PATH = DATA_DIR / "meeting.db"  # .gitignore 로 커밋되지 않는다
 
 # 사진 원본 (CLAUDE.md §6-1 — 원본은 고치지 않는다. 마킹은 좌표 JSON 으로 따로 둔다)
