@@ -21,7 +21,7 @@
 
 ## 다음 할 일
 
-1. **P3 S5 — 이슈 원장.** F2 F3 F4 F5 F21 F23 여섯 기능이 몰려 있는 가장 무거운 슬라이스다. `views/ledger.py`·`modules/issues.py`. 사진 4종이 1차로 들어와 `config/paths.py`에 사진 폴더 창구를 더해야 한다. 문서는 다 채워졌다 — 막는 것이 없다.
+1. **S5 나머지 — F5·F21·F23.** F5(1차 초안 「상세 한 장」 + 사진 업로드·마킹), F21(일정 경보 — `milestone` 샘플 CSV가 선행), F23(일괄 정리). 표는 이미 다 선언돼 있어 화면과 로직만 붙이면 된다.
 2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. **§10을 기다리는 동안 할 수 있는 일이다.**
 3. **P2 S1** — 기준정보 15표 선언. §9는 끝났고 §10만 남았다. `stage`를 파생 값으로 둘지가 모델 선언에 걸리므로 §10 뒤에 간다. 상세는 "P2 단계별 상세 — S1" 절.
 
@@ -85,7 +85,7 @@ flowchart LR
 ### P3. 화면
 
 - [x] S4 설정 화면 — 기준정보 15종 CRUD·재시드 (`views/settings.py`, `app.py` 화면 분기)
-- [ ] S5 이슈 원장 — F2 F3 F4 F23 F5
+- [~] S5 이슈 원장 — **F2·F3·F4 완료** (그리드·지식 매핑·주차별 진행). 남은 것은 **F5**(1차 초안·사진)·**F21**(일정 경보)·**F23**(일괄 정리)
 - [ ] S6 기록함 — F1
 - [ ] S7 회의자료 — F6~F10 F12 F13 F20
 - [ ] S8 발행·PPTX — F11
@@ -345,6 +345,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-12 | P3 S5 (1/2) | 운영 표 16종 선언(`models.py` 15→31표), `config/paths.py`에 사진 폴더 창구, `modules/issues.py`·`views/ledger.py` 신설, `app.py`에 원장 화면 | F3 지식 매핑이 실제로 걸림 — `2511`→`SN2511`(ensure_sn), `DG2`→`EQ-SN2511-GE-02`·`C/P #3`→`EQ-SN2514-CP-03`·`배기온도 편차`→`SY-EXH-DEV`(별칭), 기준정보에 없는 `9999`는 0/5 「미등록」 / ID 발급 `ISS-2026-0001~0003` / 주차 `2026-W46` 자동 생성 / F4 주차별 진행 한 줄 / `check_db` EXIT=0(기준정보 15표 그대로, 운영 16표는 별도로 보고) / 앱에서 그리드·등록·상세 렌더 | |
 | 2026-11-12 | P3 S4 | `views/settings.py`·`views/__init__.py` 신설, `app.py`에 화면 분기(`SCREENS`). `seed._to_values`를 `to_values`로 공개해 저장이 시드와 같은 변환을 쓰게 함 | 추가·수정·삭제·무변경 4경우 확인 / 복합 기본키(`alias` 3칸) 확인 / 날짜·정수 변환 확인(`delivery_date`→`date`, 빈 `series_no`→`None`) / 재시드 99행 복원 / 앱에서 설정 화면 렌더, `department` 8행 편집 가능, 콘솔 오류 없음 / 진단 4개 EXIT=0 | |
 | 2026-11-12 | P2 S3 | `modules/llm_client.py` 신설 — 창구만. 호출은 `_chat()` 한 함수로 몰고 `SPEC.md` §11에 사내 게이트웨이 모양을 적었다(근거: `data_manager/llm_client.py`). `check_llm`이 창구 유무를 보도록 보완 | `parse_json` doctest 4건 통과 / `check_llm` EXIT=0 (설정 없음 SKIP + 창구 확인) / 설정 없이 부르면 `LLMNotConfigured` / 실제 코드에 `requests`·`verify=False`·`proxies`·외부 API 없음 / **진단 4개 전부 EXIT=0** | |
 | 2026-11-12 | P2 S2 | `modules/db.py`·`seed.py`·`sn_util.py` 신설. `app.py` 사이드바가 적재 행 수를 보이도록 수정 | `check_db` **EXIT=0** (15표 99행 일치) / 재실행 시 "이미 적재돼 있어 건너뜀" — 중복 적재 없음 / `--force` 재시드 99행 / **진단 4개 전부 EXIT=0** (처음) / `_check.py` EXIT=0 / 앱에서 "적재된 행 99행" 표시, 콘솔 오류 없음 / `data/meeting.db`는 `.gitignore`가 거름 | |

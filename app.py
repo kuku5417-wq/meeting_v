@@ -11,6 +11,7 @@ import streamlit as st
 
 from config import paths
 from config.settings import secrets
+from views import ledger as ledger_view
 from views import settings as settings_view
 
 st.set_page_config(page_title="회의자료·지식화", page_icon="📋", layout="wide")
@@ -20,16 +21,17 @@ def home() -> None:
     st.subheader("홈")
     st.write("앱이 떴다. 이 화면은 S10에서 홈(F19)으로 바뀐다.")
     st.info(
-        "기준정보 15표가 선언되고(S1) 적재됐다(S2). 사내 LLM 창구도 있다(S3). "
-        "다음은 화면 — **S5 이슈 원장**부터다. "
+        "기준정보(S1·S2)와 사내 LLM 창구(S3), 설정 화면(S4), 이슈 원장(S5)까지 와 있다. "
+        "다음은 **S6 기록함**(메모 → 이슈 후보). "
         "단계와 진행율은 `ROADMAP.md`, 만들 것은 `requirements.md`.",
         icon="📌",
     )
 
 
-# 화면 이름 → 그리는 함수. S5 이후 여기에 한 줄씩 더한다.
+# 화면 이름 → 그리는 함수. 슬라이스마다 여기에 한 줄씩 더한다.
 SCREENS = {
     "홈": home,
+    "이슈 원장": ledger_view.render,
     "설정": settings_view.render,
 }
 

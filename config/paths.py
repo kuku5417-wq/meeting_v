@@ -20,6 +20,9 @@ SAMPLES_DIR = DATA_DIR / "samples"
 MASTERS_DIR = SAMPLES_DIR / "masters"  # 기준정보 CSV 15종. 실데이터 전환 시 CSV만 교체
 DB_PATH = DATA_DIR / "meeting.db"  # .gitignore 로 커밋되지 않는다
 
+# 사진 원본 (CLAUDE.md §6-1 — 원본은 고치지 않는다. 마킹은 좌표 JSON 으로 따로 둔다)
+PHOTOS_DIR = DATA_DIR / "photos"
+
 # 산출물 (원본을 고치지 않고 결과는 여기에 쓴다 — CLAUDE.md §6-1)
 OUT_DIR = ROOT / "out"
 
@@ -41,3 +44,11 @@ def ensure_out() -> Path:
 def master_csv(name: str) -> Path:
     """기준정보 CSV 한 장의 경로. 예: master_csv("hull") -> .../masters/hull.csv"""
     return MASTERS_DIR / f"{name}.csv"
+
+
+def photo_path(sha256: str, suffix: str) -> Path:
+    """사진 원본의 자리. `photos/<sha 앞 2자>/<sha>.<확장자>` (requirements §1-2-2).
+
+    같은 사진을 두 번 올려도 같은 자리에 떨어진다 — 해시가 이름이기 때문이다.
+    """
+    return PHOTOS_DIR / sha256[:2] / f"{sha256}{suffix if suffix.startswith('.') else '.' + suffix}"
