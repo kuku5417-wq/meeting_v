@@ -59,8 +59,11 @@ def _rows(name: str, base: Path) -> list[dict[str, str]]:
         return [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f)]
 
 
-def _to_values(name: str, cls: type, row: dict[str, str]) -> dict[str, object]:
-    """CSV 한 줄 → 모델 생성자 인수. 빈 값은 None, 정수·날짜는 형을 맞춘다."""
+def to_values(name: str, cls: type, row: dict[str, str]) -> dict[str, object]:
+    """CSV 한 줄 → 모델 생성자 인수. 빈 값은 None, 정수·날짜는 형을 맞춘다.
+
+    설정 화면(S4)의 저장도 같은 규칙을 거친다 — 변환이 두 군데로 갈리지 않게.
+    """
     values: dict[str, object] = {}
     for col in cls.__table__.columns:
         raw = row.get(col.name, "")
@@ -98,7 +101,7 @@ def seed_masters(force: bool = False, base: Path | None = None) -> dict[str, int
                 s.execute(cls.__table__.delete())
         for name, cls in SEED_ORDER:
             rows = _rows(name, base)
-            s.add_all([cls(**_to_values(name, cls, r)) for r in rows])
+            s.add_all([cls(**to_values(name, cls, r)) for r in rows])
             s.flush()  # 다음 표의 FK 가 이 표를 볼 수 있게
             loaded[name] = len(rows)
         s.commit()
