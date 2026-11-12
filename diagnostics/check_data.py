@@ -32,12 +32,12 @@ EXPECTED: dict[str, tuple[list[str], int]] = {
     "sister_group":        (["id", "name"], 6),
     "hull":                (["id", "ship_type_id", "model_id", "owner_id", "sister_group_id",
                              "series_no", "stage", "delivery_date", "title", "dock",
-                             "ship_class", "source"], 24),
+                             "ship_class", "source"], 13),
     "system":              (["id", "code", "name", "parent_id"], 7),
     "maker":               (["id", "name"], 3),
     "equipment_model":     (["id", "maker_id", "name", "model_no"], 3),
     "installed_equipment": (["id", "hull_id", "equipment_model_id", "system_id", "name",
-                             "unit_no", "position"], 9),
+                             "unit_no", "position"], 7),
     "component":           (["id", "equipment_model_id", "name"], 6),
     "test_item":           (["id", "code", "name", "system_id"], 3),
     "symptom_code":        (["id", "code", "name", "parent_id"], 4),
@@ -45,7 +45,7 @@ EXPECTED: dict[str, tuple[list[str], int]] = {
     "alias":               (["text", "target_kind", "target_id", "scope_hull_id", "source"], 14),
 }
 
-TOTAL_ROWS = 112
+TOTAL_ROWS = 99  # 진행 호선 11척 + 인도선 2척 기준 (2026-11-12, SPEC §6)
 SELF_PARENT = ("system", "symptom_code", "cause_code")  # parent_id 자기참조
 # 빈 값이 허용되고, 적재 전에 None 으로 바꿔야 하는 칸 (code-gen.md §4⑥)
 NULLABLE = {"hull": ["series_no", "delivery_date"]}

@@ -19,7 +19,7 @@
 | 파일 | 무엇의 정본인가 |
 |---|---|
 | `requirements.md` | **표·칸·화면·기능(F1~F23).** 여기 없는 것은 만들지 않는다 |
-| `SPEC.md` | 호선 기준정보 4층 구조, `stage` 어휘 5개, 검증 7규칙, 임시 데이터 24호선 |
+| `SPEC.md` | 호선 기준정보 4층 구조, `stage` 어휘, 검증 7규칙, 임시 데이터 13호선 |
 | `data/samples/masters/*.csv` **헤더** | **칸 이름의 최종 정본.** 문서와 다르면 CSV가 이긴다 |
 | `ROADMAP.md` | 단계·진행율·다음 할 일 |
 | `.claude/agents/code-gen.md` | 슬라이스 순서, 금지 사항, 확인된 함정 7개, 검증 명령 |
@@ -67,7 +67,7 @@ meeting_v/
 │  └─ pptx_export.py
 ├─ views/                      home · settings · ledger · inbox · meeting · knowledge
 ├─ diagnostics/                check_data · check_db · check_libs · check_llm
-├─ data/samples/masters/       기준정보 CSV 15종 112행 + _check.py
+├─ data/samples/masters/       기준정보 CSV 15종 99행 + _check.py
 ├─ docs/_시안/                 화면 시안
 ├─ .streamlit/                 config.toml · secrets.toml.template
 └─ .claude/                    agents · hooks(가드) · tools(roadmap)

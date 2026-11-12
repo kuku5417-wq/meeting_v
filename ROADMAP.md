@@ -21,7 +21,7 @@
 
 ## 다음 할 일
 
-1. **`SPEC.md` §10 호선 이벤트 일정 정의 — S1·S2를 막고 있다.** §9-4(단계를 일정에서 계산)에서 새로 생긴 미결이다. 물어야 할 5가지는 "§10" 절에.
+1. **`Datamanager` 프로젝트 위치 — S1·S2를 막고 있다.** 구간 코드 `ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`의 정의와 날짜 칸을 거기서 가져와야 §10 표를 정의하고 단계를 계산할 수 있다.
 2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. **§10을 기다리는 동안 할 수 있는 일이다.**
 3. **P2 S1** — 기준정보 15표 선언. §9는 끝났고 §10만 남았다. `stage`를 파생 값으로 둘지가 모델 선언에 걸리므로 §10 뒤에 간다. 상세는 "P2 단계별 상세 — S1" 절.
 
@@ -39,7 +39,7 @@
 
 | | 항목 |
 |---|---|
-| **있다** | `SPEC.md`(호선 기준정보 4층·`stage` 5종·검증 7규칙), `requirements.md`(기준정보 15표·v2e-studio 운영 3표·F5~F11), `data/samples/masters/` CSV 15종 112행 + `_check.py`, `docs/_시안/`(시안 HTML·README 명세), `.claude/agents/` 3종(`spec-writer`·`code-gen`·`spec-guard`), **안전장치**(`.gitignore`·권한 규칙·가드 훅·`roadmap.py`), **`CLAUDE.md`**(도메인 원칙 9개·용어·폴더 구조), **`diagnostics/` 4종**, **S0 골격**(`app.py`·`config/`·`.streamlit/`·`pyproject.toml`) + `.venv`(streamlit 1.67·sqlalchemy 2.1·pandas 3.1·python-pptx 1.0) |
+| **있다** | `SPEC.md`(호선 기준정보 4층·`stage` 5종·검증 7규칙), `requirements.md`(기준정보 15표·v2e-studio 운영 3표·F5~F11), `data/samples/masters/` CSV 15종 99행 + `_check.py`, `docs/_시안/`(시안 HTML·README 명세), `.claude/agents/` 3종(`spec-writer`·`code-gen`·`spec-guard`), **안전장치**(`.gitignore`·권한 규칙·가드 훅·`roadmap.py`), **`CLAUDE.md`**(도메인 원칙 9개·용어·폴더 구조), **`diagnostics/` 4종**, **S0 골격**(`app.py`·`config/`·`.streamlit/`·`pyproject.toml`) + `.venv`(streamlit 1.67·sqlalchemy 2.1·pandas 3.1·python-pptx 1.0) |
 | **없다** | `modules/`(모델·DB·시드·LLM), `views/`(화면) — S1 이후. 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(없어도 통과, 강등 경로를 쓴다) |
 | **커밋 안 됨** | S0 산출물 7개 + `uv.lock`, `.claude/launch.json` 갱신분 (이 단계 커밋 대상) |
 
@@ -55,12 +55,12 @@ flowchart LR
 ### P0. 정본 정리
 
 - [x] 기준정보 명세 `SPEC.md` (호선 4층 구조, `stage` 5종, 검증 7규칙)
-- [x] 기준정보 CSV 15종 112행 + `_check.py`
+- [x] 기준정보 CSV 15종 99행 + `_check.py`
 - [x] 화면 시안 v2 (`docs/_시안/` HTML·README 명세)
 - [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
 - [x] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`를 `main`에 병합하고 `origin/main`에 push (`bdebcc9..1f83269`). 미push 상태였던 이전 3커밋(`6720745`·`f27d8e4`·`45e4f0f`)도 함께 올라갔다
 - [x] `SPEC.md` §9 정해야 할 것 4건 확정 (2026-11-12) — 9-1 약호 `174km3 LNG` 꼴 / 9-2 적재량까지 유지 / 9-3 계약 순서 + 대책 반영은 호선 ID로 / 9-4 단계 4개 + 일정에서 계산(§10 선행). 결정 브리핑: https://claude.ai/artifact/AGSoCiE1p1GLDdY1jhPXsD
-- [ ] `SPEC.md` §10 호선 이벤트 일정 정의 — **9-4에서 새로 생긴 미결.** 단계를 일정에서 계산하려면 그 일정이 있어야 하는데 저장소에 없다. **P2 S1·S2의 선행**
+- [~] `SPEC.md` §10 호선 이벤트 일정 정의 — 표 형태·출처·받을 이벤트는 정해졌다. **남은 것은 `Datamanager` 프로젝트의 구간 코드(ST·GasT·AC·Cold·WF·DL) 정의** — 저장소 위치를 받아야 한다. **P2 S1·S2의 선행**
 - [ ] `requirements.md` §2 미결 2건 확정 — `slide_object.props` 타입별 칸 분리 여부, 나머지 운영 표 정의 (**P3 S5·S7의 선행**)
 - [ ] 시안 중 확정안 표시, 나머지는 `docs/_시안/보관/`으로
 
@@ -78,7 +78,7 @@ flowchart LR
 - [x] S-1 문서·검증 기반 (`CLAUDE.md` + `diagnostics/` 4종) — 진단 4개 크래시 없이 끝남, `check_data` `EXIT=0`
 - [x] S0 골격·설정 (Streamlit 앱이 뜬다) — `check_libs` `EXIT=0`, 앱이 8501에서 떠서 빈 홈이 보임
 - [ ] S1 모델 (기준정보 15표 선언)
-- [ ] S2 DB·시드 (15표 112행이 DB에 올라간다, `ensure_sn`)
+- [ ] S2 DB·시드 (15표 99행이 DB에 올라간다, `ensure_sn`)
 - [ ] S3 LLM (`modules/llm_client.py`)
 
 ### P3. 화면
@@ -208,7 +208,7 @@ import 통과 + 선언된 테이블 수가 **15**.
 
 ### S2. DB·시드
 
-**목표** — CSV 15종 112행이 DB에 올라가고, 다시 띄워도 중복 적재되지 않는다.
+**목표** — CSV 15종 99행이 DB에 올라가고, 다시 띄워도 중복 적재되지 않는다.
 **선행** — S1
 
 **작업 전 확인**
@@ -244,13 +244,13 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
 | 표 | 행 | 표 | 행 | 표 | 행 |
 |---|---|---|---|---|---|
-| `department` | 8 | `hull` | 24 | `component` | 6 |
+| `department` | 8 | `hull` | 13 | `component` | 6 |
 | `ship_type` | 5 | `system` | 7 | `test_item` | 3 |
 | `ship_model` | 7 | `maker` | 3 | `symptom_code` | 4 |
 | `owner` | 7 | `equipment_model` | 3 | `cause_code` | 6 |
-| `sister_group` | 6 | `installed_equipment` | 9 | `alias` | 14 |
+| `sister_group` | 6 | `installed_equipment` | 7 | `alias` | 14 |
 
-합계 **112행 / 15표**.
+합계 **99행 / 15표**.
 
 ## §9 결정 결과 (2026-11-12) 와 §10 미결
 
@@ -261,29 +261,39 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 9-1 모델 약호 | `174km3 LNG` · `13000TEU` 꼴. 셔틀탱커·VLEC·FLNG 3종은 지금 표기 유지 | ✅ `ship_model.csv` 4행 교체, `SPEC.md` §3-1 |
 | 9-2 모델 분해 | 적재량까지 유지. 더 쪼개지 않는다 | ✅ 변경 없음 |
 | 9-3 `series_no` | 계약 순서. **대책 반영은 순번이 아니라 호선 ID로 적는다** | ✅ `SPEC.md` §5 |
-| 9-4 단계 어휘 | `안벽기간`·`시운전기간`·`앵카링기간`·`Layup` 4개, 값은 **호선 이벤트 일정에서 입력 시 계산** | ⏸ §10 선행. `SPEC.md` §3-3에 결정만 적어 뒀다 |
+| 9-4 단계 어휘 | `안벽기간`(나머지) · `시운전기간`(ST+GasT) · `앵카링기간`(AC+Cold) · `Layup`(WF~DL) · `인도선`. 값은 **일정에서 계산** | 🔸 어휘·구간·샘플 정리 완료. **값 계산만 §10 선행** |
 | 9-A 이름 | **표 이름·칸 이름(헤더)은 바꾸지 않는다.** 사내망에서 헤더 값만 매칭한다. 칸 추가도 먼저 묻는다 | ✅ `CLAUDE.md` §2, `SPEC.md` §9-A |
+
+### 샘플 데이터를 진행 호선으로 정리했다 (24 → 13척)
+
+커미셔닝팀이 다루는 것은 안벽에 들어온 뒤의 호선이라, 설계·건조 9척을 뺐다. 인도선은 **2척만 남겼다.**
+
+- `SN2510`을 남긴 것이 중요하다. `SG-01`의 **1번선**이어서, 빼면 그 묶음 순번이 2·3으로 시작해 **검증 규칙 4가 깨진다.** 남기니 1·2·3으로 이어진다.
+- `SN2402`는 단독선이라 묶음에 영향이 없다.
+- `SG-02`(SN2433·SN2434)는 두 척 다 인도돼 **소속 호선이 없는 묶음**으로 남았다. 기준정보에서 지우지 않았다.
+- `ST-FLNG`·`SM-FLNG2M`·`SM-CNT2700`·`OW-G`는 쓰는 호선이 없어졌다. 목록이므로 남겨 둔다.
+
+합계 **112행 → 99행** (hull 24→13, installed_equipment 9→7). `check_data.py`의 기대값과 `_check.py`의 `STAGES`를 함께 고쳤다.
+
+진행 호선 11척은 아직 옛 표기(`시운전 1단계`·`시운전 2단계`)다. 새 값은 일정에서 계산해야 하는데 그 일정이 없어서다(§10). `STAGES`가 목표 어휘 5개와 옛 표기 2개를 **함께** 받고, §10이 정해지면 11척을 계산해서 바꾸고 옛 표기를 지운다.
 
 ### §10 호선 이벤트 일정 — S1·S2를 막고 있다
 
-9-4를 적용하려면 단계를 계산할 **일정**이 있어야 하는데 저장소에 없다. 지금 호선이 가진 날짜는 `hull.delivery_date` 하나뿐이고, 그것만으로는 안벽·시운전·앵카링·Layup을 가를 수 없다.
+정해진 것: **별도 표**(hull에 칸을 더하지 않는다) · **사내 시스템(pjtlist 등)에서 들어온다**(사람 입력 아님) · 받을 이벤트는 **시운전 출항·귀항 / 앵카링 시작·해제 / Layup 시작·해제**(안벽은 나머지로 계산하므로 받지 않는다).
 
-지금 어휘만 바꾸면 **24척을 어느 값으로도 분류할 수 없다** — 설계·건조 9척과 인도 4척이 새 4개에 대응이 없다 — 그리고 검증 규칙 6·7이 함께 깨진다. 그래서 데이터와 `_check.py`는 손대지 않았다.
+**막혀 있는 것 — `Datamanager` 프로젝트를 봐야 한다**
 
-**물어야 할 것 5가지** (상세는 `SPEC.md` §10)
-
-1. 어떤 이벤트를 기록하는가 (안벽 접안, 시운전 출항·귀항, 앵커링, Layup, 인도 …)
-2. 그 날짜는 어디서 오는가 (사람 입력 / pjtlist 같은 사내 시스템)
-3. 호선 1건에 이벤트 여러 건인 별도 표인가, `hull`에 날짜 칸 몇 개인가 — **후자는 9-A에 걸린다**
-4. 날짜들에서 4개 중 하나를 고르는 규칙. 이벤트가 비면 무엇으로 두는가
-5. 이미 인도된 호선·아직 안벽 전인 호선은 어떤 값이 되는가
+1. 구간 코드 `ST`·`GasT`·`AC`·`Cold`·`WF`·`DL`의 정의와 날짜 칸. **그 저장소·폴더 위치를 아직 받지 못했다**
+2. 표 이름·칸 이름 — §9-A에 따라 짓지 않는다. Datamanager 헤더를 따를지 정해야 한다
+3. 구간이 겹치거나(시운전 중 앵카링) 날짜가 비면 무엇으로 두는가
+4. 시운전·앵카링이 여러 번이면 회차를 행으로 쌓는가
 
 기준정보 15종에 없는 표이므로, 만들기 전에 `requirements.md`에 먼저 적어야 한다 (`CLAUDE.md` §8-7).
 
 **확인된 제약** (정리 중에 데이터에서 드러난 것)
 
 - `alias`의 `target_kind`는 지금 `installed_equipment`·`component`·`symptom` 셋뿐이라 **모델을 가리킬 수 없다.** 현장 모델 표기가 여럿이면 `code` 하나로는 못 받는다.
-- 샘플 24척은 계약·호선번호·인도일 순서가 전부 일치해 **9-3이 어느 쪽이든 샘플 CSV는 그대로 쓸 수 있다.** 차이는 실데이터에서만 드러난다.
+- 샘플 호선은 계약·호선번호·인도일 순서가 전부 일치해 **9-3이 어느 쪽이든 샘플 CSV는 그대로 쓸 수 있다.** 차이는 실데이터에서만 드러난다.
 - 검증 규칙 5("한 묶음 안은 같은 모델")는 9-2를 더 쪼갤 때의 지뢰다. 유지로 결정돼 지금은 걸리지 않는다.
 
 ## 뚫어 보기 기록 (P1)
@@ -308,10 +318,11 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P1 | 교육장 묶음 적용 — `.gitignore`, 권한 규칙, 가드 훅 2개, `roadmap.py`, 에이전트 2개 보완 (`ROADMAP.md`는 제외하고 받음) | `guard-test.js` 26건 FAIL 0 / `git check-ignore` 12건 의도대로 / 가드 훅 실차단 1건 | `d464b6b` |
 | 2026-11-12 | P0 | `ROADMAP.md` 재작성 — P0~P5 체계로 전환, 기존 `roadmap.md` 삭제 | `roadmap.py update`·`brief`·`check` 전부 EXIT=0 | `d464b6b` |
 | 2026-11-12 | P0 | `main` push — `origin/main`을 `bdebcc9` → `1f83269`로 올림. 미push였던 이전 3커밋 포함 | 올라간 파일 24개 점검, 비밀·원본 데이터 없음 (샘플 CSV는 가상값) | `1f83269` |
-| 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 112행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | `823c6a3` |
+| 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 99행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | `823c6a3` |
 | 2026-11-12 | P2 S0 | 골격·설정 7개 + `config/__init__.py` 신설, `uv sync`로 의존성 설치, `.claude/launch.json`에 앱 설정 추가 | `import config.settings, config.paths` EXIT=0 / `check_libs` **EXIT=0** (streamlit 1.67.0·sqlalchemy 2.1.8·pandas 3.1.1·python-pptx 1.0.2) / 앱이 8501에서 떠서 빈 홈 표시, 콘솔 오류 없음 / 사이드바에 기준정보 CSV 15장·DB 없음·LLM 없음이 창구를 거쳐 나옴 | `8d23147` |
 | 2026-11-12 | P0 | `SPEC.md` §9 4건 정리 — 선택지·영향 범위·되돌리기 비용·권고안. 팀 공유용 결정 브리핑 발행 | 샘플 CSV·`_check.py` 규칙과 대조해 근거 확인 (별칭이 모델을 못 가리킴, 샘플 24척의 세 순서가 일치, 규칙 5와 모델 분해의 충돌) | |
 | 2026-11-12 | P0 | §9 4건 **결정 확정·반영** — 약호 교체(`ship_model.csv` 4행), §5 순번 기준, §3-1 예시, §9-A 이름 고정 규칙(`CLAUDE.md`+`SPEC.md`). 9-4는 결정만 적고 보류, 새 미결 §10 신설 | `check_data` EXIT=0 (헤더·행 수 불변) / `_check.py` EXIT=0 (규칙 7개 유지) | |
+| 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 
 ## 추가·변경 기록
 

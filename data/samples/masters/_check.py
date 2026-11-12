@@ -14,7 +14,14 @@ import re
 import sys
 from pathlib import Path
 
-STAGES = ("설계", "건조", "시운전 1단계", "시운전 2단계", "인도")
+# 목표 어휘 (SPEC.md §3-3, 2026-11-12 확정) — 값은 호선 이벤트 일정에서 계산한다
+#   안벽기간 = 시운전·앵카링·Layup 을 뺀 나머지 / 시운전기간 = ST+GasT
+#   앵카링기간 = AC+Cold / Layup = WF~DL / 인도선 = 인도 완료
+# 뒤 2개는 **전환용**이다. 진행 호선 11척의 값은 일정(§10)이 들어오면 계산해서 바꾸고,
+# 그때 이 두 개를 지운다. 샘플에는 진행 호선과 인도선 2척만 둔다 (설계·건조는 제외).
+STAGES = ("안벽기간", "시운전기간", "앵카링기간", "Layup", "인도선",
+          "시운전 1단계", "시운전 2단계")
+DELIVERED = "인도선"
 
 
 def read(base: Path, name: str) -> list[dict[str, str]]:
@@ -53,12 +60,12 @@ def check(base: Path, today: datetime.date) -> list[str]:
             err.append(f"[3] {hid} series_no 가 있으나 sister_group_id 가 비었음")
         # 6) 단계 어휘
         if h["stage"] not in STAGES:
-            err.append(f"[6] {hid} 단계 '{h['stage']}' 는 어휘 5개 밖")
+            err.append(f"[6] {hid} 단계 '{h['stage']}' 는 어휘 밖")
         # 7) 단계 ↔ 인도일
         d = datetime.date.fromisoformat(h["delivery_date"])
-        if h["stage"] == "인도" and d > today:
-            err.append(f"[7] {hid} 인도 상태인데 인도일({d})이 미래")
-        if h["stage"] != "인도" and d <= today:
+        if h["stage"] == DELIVERED and d > today:
+            err.append(f"[7] {hid} 인도선인데 인도일({d})이 미래")
+        if h["stage"] != DELIVERED and d <= today:
             err.append(f"[7] {hid} 미인도 상태인데 인도일({d})이 과거")
 
     # 4) 묶음별 순번 1부터 연속 / 5) 묶음 안은 같은 모델·선주
