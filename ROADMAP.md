@@ -6,12 +6,12 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 28%** (9/32) ███░░░░░░░
+**전체 진행율 31%** (10/32) ███░░░░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
 |---|---|---|---|
-| P0. 정본 정리 | 4/8 | 50% | █████░░░░░ |
+| P0. 정본 정리 | 5/8 | 62% | ██████░░░░ |
 | P1. 안전장치 (3일차 교육 적용) | 5/6 | 83% | ████████░░ |
 | P2. 기반 | 0/5 | 0% | ░░░░░░░░░░ |
 | P3. 화면 | 0/7 | 0% | ░░░░░░░░░░ |
@@ -58,7 +58,7 @@ flowchart LR
 - [x] 기준정보 CSV 15종 112행 + `_check.py`
 - [x] 화면 시안 v2 (`docs/_시안/` HTML·README 명세)
 - [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
-- [~] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`. `d464b6b`·`d566961`을 `main`에 병합 완료. **push 남음** — `main`이 `origin/main`보다 5커밋 앞서 있다 (이 2건 + 이전 `6720745`·`f27d8e4`·`45e4f0f`도 아직 안 올라감)
+- [x] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`를 `main`에 병합하고 `origin/main`에 push (`bdebcc9..1f83269`). 미push 상태였던 이전 3커밋(`6720745`·`f27d8e4`·`45e4f0f`)도 함께 올라갔다
 - [ ] `SPEC.md` §9 정해야 할 것 4건 확정 (모델 약호, 분해 수준, `series_no` 기준, 단계 어휘)
 - [ ] `requirements.md` §2 미결 2건 확정 — `slide_object.props` 타입별 칸 분리 여부, 나머지 운영 표 정의 (**P3 S5·S7의 선행**)
 - [ ] 시안 중 확정안 표시, 나머지는 `docs/_시안/보관/`으로
@@ -272,6 +272,7 @@ cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | — | `roadmap.md` 신설 (S-1~S2 계획 + 진행 장부) | `_check.py` EXIT=0 (기준선) | 없음 |
 | 2026-11-12 | P1 | 교육장 묶음 적용 — `.gitignore`, 권한 규칙, 가드 훅 2개, `roadmap.py`, 에이전트 2개 보완 (`ROADMAP.md`는 제외하고 받음) | `guard-test.js` 26건 FAIL 0 / `git check-ignore` 12건 의도대로 / 가드 훅 실차단 1건 | `d464b6b` |
 | 2026-11-12 | P0 | `ROADMAP.md` 재작성 — P0~P5 체계로 전환, 기존 `roadmap.md` 삭제 | `roadmap.py update`·`brief`·`check` 전부 EXIT=0 | `d464b6b` |
+| 2026-11-12 | P0 | `main` push — `origin/main`을 `bdebcc9` → `1f83269`로 올림. 미push였던 이전 3커밋 포함 | 올라간 파일 24개 점검, 비밀·원본 데이터 없음 (샘플 CSV는 가상값) | `1f83269` |
 
 ## 추가·변경 기록
 
