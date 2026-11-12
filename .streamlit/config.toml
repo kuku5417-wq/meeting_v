@@ -5,6 +5,9 @@ port = 8501
 headless = true
 fileWatcherType = "auto"
 maxUploadSize = 50
+# 저장소 루트의 static/ 를 /app/static/ 으로 내어 준다 — 글꼴 서브셋(static/fonts/)이 여기로 받아진다.
+# 끄면 글꼴만 안 받아지고 대체 사슬(맑은 고딕)로 떨어진다. 화면은 그대로 뜬다.
+enableStaticServing = true
 
 [browser]
 # 사외망·사내망 모두 외부로 사용 통계를 보내지 않는다.

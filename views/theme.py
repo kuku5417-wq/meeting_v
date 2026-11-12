@@ -22,7 +22,7 @@ import re
 
 import streamlit as st
 
-from config.paths import APP_TOKENS, MOCKUP_TOKENS
+from config.paths import APP_FONTS, APP_TOKENS, MOCKUP_TOKENS
 
 # 상태·유형 → 의미 색 토큰. 화면이 색을 직접 고르지 않게 한 군데 둔다 (디자인_규칙 §2-2).
 MEANING = {
@@ -130,9 +130,17 @@ h3 { font-size: var(--fs-3); }
 """
 
 
+def _fonts() -> str:
+    """`@font-face` — 시안 서브셋을 앱에서 받게 한다. 파일이 없으면 대체 사슬로 떨어진다."""
+    return APP_FONTS.read_text(encoding="utf-8") if APP_FONTS.exists() else ""
+
+
 def apply() -> None:
     """화면을 그리기 전에 한 번 부른다. `app.py` 에서만 부른다."""
-    st.markdown(f"<style>\n{_tokens()}\n{_LAYOUT}</style>", unsafe_allow_html=True)
+    st.markdown(
+        f"<style>\n{_fonts()}\n{_tokens()}\n{_LAYOUT}</style>",
+        unsafe_allow_html=True,
+    )
 
 
 def _token_for(key: str) -> str | None:

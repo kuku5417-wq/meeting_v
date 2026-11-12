@@ -18,7 +18,9 @@ DESIGN_RULES = DOCS_DIR / "디자인_규칙.md"  # 디자인 정본
 # 디자인 토큰 — 시안 것이 원본이고(고치지 않는다), 앱이 달라지는 값만 덮어쓴다.
 # views/theme.py 가 이 순서로 넣는다 (디자인_규칙 §1).
 MOCKUP_TOKENS = DOCS_DIR / "_시안" / "design" / "tokens.css"
-APP_TOKENS = ROOT / "static" / "tokens.css"
+STATIC_DIR = ROOT / "static"  # Streamlit 이 /app/static/ 으로 내어 주는 자리
+APP_TOKENS = STATIC_DIR / "tokens.css"
+APP_FONTS = STATIC_DIR / "fonts.css"  # @font-face. 글꼴 파일은 static/fonts/
 
 # 데이터
 DATA_DIR = ROOT / "data"

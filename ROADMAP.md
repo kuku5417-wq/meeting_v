@@ -368,9 +368,15 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
    > Material 리거처가 깨진 것이다. 아이콘 `data-testid` 셋만 `"Material Symbols Rounded"`로 되돌렸다.
    > 그 글꼴은 Streamlit 이 함께 넣어 둬서 사외망·사내망 모두 뜬다.
 
-**남은 것**
+5. ✅ **글꼴 서브셋을 앱에 넣었다** (2026-11-13). `static/fonts/` 에 woff2 5개 + OFL 2건,
+   `static/fonts.css` 가 `@font-face` (선언은 시안 것 그대로, 경로만 앱 자리로).
+   `.streamlit/config.toml` 의 `enableStaticServing` 으로 `/app/static/` 에서 받는다.
 
-5. **글꼴** — 서브셋(823KB)을 앱에 둘지 아직. 지금은 대체 사슬(맑은 고딕)로 떨어진다
+   > 사내망에서 외부 글꼴이 막혀도 시안과 같은 글꼴로 보인다 — 그러라고 시안이 서브셋을 둔 것이다.
+   > 정적 제공을 끄면 글꼴만 안 받아지고 대체 사슬(맑은 고딕)로 떨어진다. 화면은 그대로 뜬다.
+   > 저장소가 840KB 늘었고 `docs/_시안/` 것과 같은 파일이라 중복이다 — 시안은 참조용이라 그대로 둔다.
+
+**남은 것** — SD 에서 할 일은 다 했다. 아래 컴포넌트 토큰만 남는다.
 
 **`ui-reviewer` 1차 (2026-11-13) — 판정: 반려 (필수 10건)**
 
@@ -428,6 +434,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-13 | SD 4차 | 글꼴 서브셋을 앱에 넣음 — `static/fonts/` woff2 5개 + OFL 2건, `static/fonts.css`, `enableStaticServing` | `document.fonts` 로 Meeting Sans KR 400·600 **loaded** 확인, `fonts.check('400 14px "Meeting Sans KR"')` true / `design_check` 0건 / 진단 4개 EXIT=0 / 저장소 +840KB | |
 | 2026-11-13 | SD 3차 | `ui-reviewer` 1차 반려(필수 10건) 중 6건 수정 — 경보 칩 색·완료 표시·비활성 도움말·스피너·근거 노란 바탕·「종결」 선택 제한 | `design_check` 0건 / 진단 4개 EXIT=0 / 앱에서 사이드바 흰색(`rgb(255,255,255)`)·`--warn-soft` `#fbefd9` 로 풀림·예외 없음 / `_token_for` 가 "일정 임박 D+28"→signal, "기한 지남 D-72"→danger 로 맞음 | |
 | 2026-11-13 | SD 2차 | 흰 사이드바, `static/tokens.css` 신설(`theme.py`는 읽기만), `--sep`·`--warn-soft` 신설, 이모지 11건 → `:material/` 아이콘 | `design_check` **0건** / 진단 4개·`_check.py` EXIT=0 / 앱에서 흰 사이드바·지금 메뉴 강조·아이콘 글리프 확인 | |
 | 2026-11-12 | P3 S6 | `modules/extract.py`·`views/inbox.py` 신설, `app.py`에 기록함 화면 | `locate` doctest 3건 / **근거 규칙(§6-3)이 코드로 막힌다** — 지어낸 후보(메모에 없는 `quote`)와 제목 없는 후보를 버리고 왜 버렸는지 화면에 적는다 / 등록 시 `source_span` 4칸 + `ai_field_log` 기록 / 사외망에서는 `LLMNotConfigured` → 직접 적기로 강등, 사람이 적은 값은 근거 구간 없이 등록 / 진단 4개 EXIT=0 / 앱에서 기록함 렌더 | |

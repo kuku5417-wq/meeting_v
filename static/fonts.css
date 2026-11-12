@@ -1,0 +1,16 @@
+/* 로컬 글꼴 — 사내망에서 외부 글꼴이 막혀도 시안과 같은 글꼴로 보이게 한다.
+   선언은 docs/_시안/app/static/css/fonts.css 그대로이고, 경로만 앱 자리로 바꿨다.
+   파일은 static/fonts/ (서브셋 woff2 + OFL 라이선스 2건).
+
+   IBM Plex 서브셋은 OFL 예약 이름("Plex") 때문에 이름이 Meeting Sans KR / Meeting Mono 다.
+   tokens.css 의 --body / --mono 가 이 이름들을 맨 앞에서 찾는다.
+
+   경로가 "app/static/..." 인 이유: Streamlit 이 저장소 루트의 static/ 폴더를
+   /app/static/ 으로 내어 준다 (.streamlit/config.toml 의 enableStaticServing).
+   그 설정이 꺼져 있으면 글꼴만 안 받아지고 대체 사슬(맑은 고딕)로 떨어진다 — 화면은 그대로 뜬다. */
+
+@font-face{font-family:"Meeting Sans KR";font-weight:400;font-style:normal;font-display:swap;src:url("app/static/fonts/MeetingSansKR-Regular.woff2") format("woff2")}
+@font-face{font-family:"Meeting Sans KR";font-weight:500;font-style:normal;font-display:swap;src:url("app/static/fonts/MeetingSansKR-Medium.woff2") format("woff2")}
+@font-face{font-family:"Meeting Sans KR";font-weight:600;font-style:normal;font-display:swap;src:url("app/static/fonts/MeetingSansKR-SemiBold.woff2") format("woff2")}
+@font-face{font-family:"Meeting Mono";font-weight:400;font-style:normal;font-display:swap;src:url("app/static/fonts/MeetingMono-Regular.woff2") format("woff2")}
+@font-face{font-family:"Meeting Mono";font-weight:500;font-style:normal;font-display:swap;src:url("app/static/fonts/MeetingMono-Medium.woff2") format("woff2")}
