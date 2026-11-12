@@ -256,27 +256,25 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 | | |
 |---|---|
 | 키 | `project` — 호선번호, `ensure_sn` 적용. 우리 `hull.id`와 같은 값이고 **이름만 다르다** |
-| 칸 | `PLAN<EVT>` 계획일 · `PROS<EVT>` 예정일(전망) · `PERF<EVT>` 실적일 — 15 이벤트 × 3계열 = 45칸 + 키 = 46칸 |
-| 이벤트 15종 | `LC` 기공 · `SP` · `BT` · `GT` · `CMR` · `COLDFROM`/`COLDTO` · `IE` · `MT` · `GASFROM`/`GASTO` · `STFROM`/`STTO` · `WF` 진수 · `DL` 인도 |
+| 칸 | `PLAN<EVT>` 계획일 · `PROS<EVT>` 예정일(전망) · `PERF<EVT>` 실적일 — 17 이벤트 × 3계열 = 51칸 + 키 = 52칸 |
+| 이벤트 17종 | `LC` 기공 · `SP` · `BT` · `GT` · `CMR` · **`ACFROM`/`ACTO` 앵커링** · `COLDFROM`/`COLDTO` · `IE` · `MT` · `GASFROM`/`GASTO` · `STFROM`/`STTO` · `WF` 진수 · `DL` 인도 |
+
+> `ACFROM`/`ACTO`는 `DATA_SCHEMA.md`(2026-08-11 스냅샷)에 없지만 **운영 `pjtevnt`에 있다**(2026-11-12 확인).
+> 문서가 "운영 DB에 이벤트가 추가되면 컬럼이 늘어난다"고 경고한 그대로다. `SELECT *`이므로 코드 수정 없이 들어온다.
 
 **구간 코드가 어디서 오는가**
 
 | 우리 단계 | 사용자 표기 | `milestone`에서 |
 |---|---|---|
 | `시운전기간` | ST + GasT | `STFROM`~`STTO`, `GASFROM`~`GASTO` |
-| `앵카링기간` | AC + Cold | `COLDFROM`~`COLDTO` **만.** `AC`는 없다 (아래) |
+| `앵카링기간` | AC + Cold | `ACFROM`~`ACTO`, `COLDFROM`~`COLDTO` |
 | `Layup` | WF ~ DL | `pjtlist`의 `WORKFINISH` ~ `milestone`의 `DL` |
 | `안벽기간` | 나머지 | 위 셋을 뺀 구간 |
 | `인도선` | — | `DL`이 지남 |
 
-> **⚠ `AC`는 `milestone`에 없다.**
-> 문서에 적힌 15개 이벤트 어디에도 `AC`가 없고, `AC`는 `trial_schedule.일정구분`의 값으로만 나온다.
-> `trial_schedule`을 받지 않기로 했으므로 **앵카링기간은 `Cold`(`COLDFROM`~`COLDTO`)만으로 계산된다.**
->
-> 다만 `DATA_SCHEMA.md`는 2026-08-11 기준이고 `milestone`은 `SELECT *` 기반이라
-> **"운영 DB에 이벤트가 추가되면 컬럼이 늘어난다"**고 적혀 있다. 실제 `pjtevnt`에 `AC` 계열 컬럼이
-> 있을 수 있다. 뜻이 적히지 않은 코드도 여섯 개 남아 있다 — `SP` · `BT` · `GT` · `CMR` · `IE` · `MT`.
-> **실제 parquet의 컬럼 목록을 한 번 뽑으면 확정된다.** 그때까지 앵카링은 `Cold`만으로 둔다.
+> **네 구간이 모두 `milestone` 하나에서 나온다.** `trial_schedule`을 받지 않아도 계산이 성립한다.
+> `AC`는 `trial_schedule.일정구분`의 값으로도 나오지만, 같은 구간이 `milestone`에
+> `ACFROM`/`ACTO`로도 있으므로 그쪽을 쓴다.
 
 ### 10-2. 계산 규칙 (2026-11-12 확정)
 
@@ -290,7 +288,7 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 | 단계 | 경계 | 출처 |
 |---|---|---|
 | `시운전기간` | `STFROM` ~ `STTO`, `GASFROM` ~ `GASTO` | `milestone` |
-| `앵카링기간` | `COLDFROM` ~ `COLDTO` (`AC`는 받는 표에 없다) | `milestone` |
+| `앵카링기간` | `ACFROM` ~ `ACTO`, `COLDFROM` ~ `COLDTO` | `milestone` |
 | `Layup` | **`WORKFINISH` ~ `DL`** — 공사가 끝나고 인도까지 대기 계류하는 구간 | `pjtlist` + `milestone` |
 | `안벽기간` | 위 셋 어디에도 들어가지 않는 나머지 | — |
 | `인도선` | `DL`이 지났다 | `milestone` |
@@ -315,10 +313,13 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 "운영 DB에 이벤트가 추가되면 컬럼이 늘어난다. 컬럼 존재 여부를 확인하고 접근할 것"이라고 적고 있다.
 저장소에 실제 parquet은 커밋돼 있지 않다.
 
-**확인해야 할 것 두 가지 — 실제 `milestone.parquet`에서 뽑는다**
+**`AC`는 확인됐다** — `ACFROM`/`ACTO`로 있다(2026-11-12). 네 구간이 모두 `milestone`에서 나오므로
+**§9-4를 적용할 조건은 갖춰졌다.**
 
-1. **`AC` 계열 컬럼이 있는가** (`PERFAC`·`ACFROM`/`ACTO` 같은 이름). 있으면 앵카링기간이 `AC + Cold`로 완성된다
-2. **뜻이 적히지 않은 코드 여섯 개** — `SP` · `BT` · `GT` · `CMR` · `IE` · `MT`. 이 중 앵커링에 해당하는 것이 있는지
+**남은 것은 급하지 않다**
+
+1. 뜻이 적히지 않은 코드 여섯 개 — `SP` · `BT` · `GT` · `CMR` · `IE` · `MT`. 우리 네 구간은 이들 없이 계산되므로 **지금 막는 것은 아니다**
+2. 문서(2026-08-11)에 없는 컬럼이 `ACFROM`/`ACTO` 말고 더 있을 수 있다. 세 계열(`PLAN`/`PROS`/`PERF`) 대칭이 `AC`에도 성립하는지도 함께 보면 좋다
 
 확인용 코드 (사내망에서 `milestone.parquet` 경로를 넣고 돌린다):
 
