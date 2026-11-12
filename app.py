@@ -23,7 +23,12 @@ with st.sidebar:
     csv_count = len(sorted(paths.MASTERS_DIR.glob("*.csv"))) if paths.MASTERS_DIR.is_dir() else 0
     st.metric("기준정보 CSV", f"{csv_count}장")
 
-    st.write("**DB**", "있음" if paths.DB_PATH.exists() else "없음 (S2에서 만든다)")
+    if paths.DB_PATH.exists():
+        from modules.seed import counts
+
+        st.metric("적재된 행", f"{sum(counts().values())}행")
+    else:
+        st.write("**DB**", "없음 (S2에서 만든다)")
     st.write("**사내 LLM 설정**", "있음" if secrets.has("llm_base_url") else "없음 (사외망에서는 정상)")
 
     st.divider()
@@ -40,7 +45,7 @@ st.subheader("홈")
 st.write("앱이 떴다. 이 화면은 S10에서 홈(F19)으로 바뀐다.")
 
 st.info(
-    "다음 슬라이스: **S1 모델** (기준정보 15표 선언) → **S2 DB·시드** (112행 적재). "
-    "단계와 진행율은 `ROADMAP.md`, 만들 것은 `requirements.md`.",
+    "기준정보 15표가 선언되고(S1) 적재됐다(S2). 다음 슬라이스는 **S3 LLM**, "
+    "화면은 **S4 설정**부터 붙는다. 단계와 진행율은 `ROADMAP.md`, 만들 것은 `requirements.md`.",
     icon="📌",
 )
