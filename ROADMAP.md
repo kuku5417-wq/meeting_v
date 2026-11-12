@@ -273,7 +273,7 @@ cd data/samples/masters && python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P1 | 교육장 묶음 적용 — `.gitignore`, 권한 규칙, 가드 훅 2개, `roadmap.py`, 에이전트 2개 보완 (`ROADMAP.md`는 제외하고 받음) | `guard-test.js` 26건 FAIL 0 / `git check-ignore` 12건 의도대로 / 가드 훅 실차단 1건 | `d464b6b` |
 | 2026-11-12 | P0 | `ROADMAP.md` 재작성 — P0~P5 체계로 전환, 기존 `roadmap.md` 삭제 | `roadmap.py update`·`brief`·`check` 전부 EXIT=0 | `d464b6b` |
 | 2026-11-12 | P0 | `main` push — `origin/main`을 `bdebcc9` → `1f83269`로 올림. 미push였던 이전 3커밋 포함 | 올라간 파일 24개 점검, 비밀·원본 데이터 없음 (샘플 CSV는 가상값) | `1f83269` |
-| 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 112행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | |
+| 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 112행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | `823c6a3` |
 
 ## 추가·변경 기록
 
