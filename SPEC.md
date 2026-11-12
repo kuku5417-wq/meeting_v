@@ -247,31 +247,36 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 ### 10-1. `data_manager`에서 확인한 것 (2026-11-12)
 
 출처: <https://github.com/kuku5417-wq/data_manager> 의 `DATA_SCHEMA.md`.
-**구간 코드는 한 표에 있지 않다. 두 표를 함께 써야 한다.**
+
+**받는 표: `milestone.parquet` 하나다** (2026-11-12 결정). `trial_schedule`은 받지 않는다.
+**칸 이름은 헤더 그대로 쓴다** — §9-A대로 우리가 짓지 않는다.
 
 **`milestone.parquet`** — 호선 마일스톤 (MySQL `pjtevnt` 미러, **wide 그대로. unpivot 하지 않는다**)
 
 | | |
 |---|---|
-| 키 | `project` — 호선번호, `ensure_sn` 적용 |
+| 키 | `project` — 호선번호, `ensure_sn` 적용. 우리 `hull.id`와 같은 값이고 **이름만 다르다** |
 | 칸 | `PLAN<EVT>` 계획일 · `PROS<EVT>` 예정일(전망) · `PERF<EVT>` 실적일 — 15 이벤트 × 3계열 = 45칸 + 키 = 46칸 |
 | 이벤트 15종 | `LC` 기공 · `SP` · `BT` · `GT` · `CMR` · `COLDFROM`/`COLDTO` · `IE` · `MT` · `GASFROM`/`GASTO` · `STFROM`/`STTO` · `WF` 진수 · `DL` 인도 |
 
-**`trial_schedule.parquet`** — 시운전 **항차** 일정. 회차가 행으로 쌓인다
-
-| | |
-|---|---|
-| 칸 | `PJT` 호선번호 · `일정구분` · `출항` · `복귀` · `대기`(현 실파일 전량 결측) |
-| `일정구분` 값 | `LC~GT+1` · **`AC`** · `통합시운전` · `ST,DP` · `인도준비` 등 |
-
 **구간 코드가 어디서 오는가**
 
-| 우리 단계 | 사용자 표기 | 실제 출처 |
+| 우리 단계 | 사용자 표기 | `milestone`에서 |
 |---|---|---|
-| `시운전기간` | ST + GasT | `milestone`의 `STFROM`/`STTO`·`GASFROM`/`GASTO`, 또는 `trial_schedule`의 `ST,DP`·`통합시운전` 항차 |
-| `앵카링기간` | AC + Cold | **`AC`는 `trial_schedule.일정구분`** / **`Cold`는 `milestone`의 `COLDFROM`/`COLDTO`** — 서로 다른 표다 |
-| `Layup` | WF ~ DL | `milestone`의 `WF`·`DL`, **또는** `pjtlist`의 `WORKFINISH` ~ `milestone`의 `DL` (아래 참조) |
+| `시운전기간` | ST + GasT | `STFROM`~`STTO`, `GASFROM`~`GASTO` |
+| `앵카링기간` | AC + Cold | `COLDFROM`~`COLDTO` **만.** `AC`는 없다 (아래) |
+| `Layup` | WF ~ DL | `pjtlist`의 `WORKFINISH` ~ `milestone`의 `DL` |
 | `안벽기간` | 나머지 | 위 셋을 뺀 구간 |
+| `인도선` | — | `DL`이 지남 |
+
+> **⚠ `AC`는 `milestone`에 없다.**
+> 문서에 적힌 15개 이벤트 어디에도 `AC`가 없고, `AC`는 `trial_schedule.일정구분`의 값으로만 나온다.
+> `trial_schedule`을 받지 않기로 했으므로 **앵카링기간은 `Cold`(`COLDFROM`~`COLDTO`)만으로 계산된다.**
+>
+> 다만 `DATA_SCHEMA.md`는 2026-08-11 기준이고 `milestone`은 `SELECT *` 기반이라
+> **"운영 DB에 이벤트가 추가되면 컬럼이 늘어난다"**고 적혀 있다. 실제 `pjtevnt`에 `AC` 계열 컬럼이
+> 있을 수 있다. 뜻이 적히지 않은 코드도 여섯 개 남아 있다 — `SP` · `BT` · `GT` · `CMR` · `IE` · `MT`.
+> **실제 parquet의 컬럼 목록을 한 번 뽑으면 확정된다.** 그때까지 앵카링은 `Cold`만으로 둔다.
 
 ### 10-2. 계산 규칙 (2026-11-12 확정)
 
@@ -284,8 +289,8 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 
 | 단계 | 경계 | 출처 |
 |---|---|---|
-| `시운전기간` | **1순위** 항차의 `출항` ~ `복귀` — 실적이라 최종으로 본다<br>**2순위** 항차 데이터가 없으면 `STFROM`~`STTO` 또는 `GASFROM`~`GASTO` | `trial_schedule` → 없으면 `milestone` |
-| `앵카링기간` | 항차 중 `일정구분`이 `AC`인 것의 `출항` ~ `복귀`<br>그리고 `COLDFROM` ~ `COLDTO` | `trial_schedule` + `milestone` |
+| `시운전기간` | `STFROM` ~ `STTO`, `GASFROM` ~ `GASTO` | `milestone` |
+| `앵카링기간` | `COLDFROM` ~ `COLDTO` (`AC`는 받는 표에 없다) | `milestone` |
 | `Layup` | **`WORKFINISH` ~ `DL`** — 공사가 끝나고 인도까지 대기 계류하는 구간 | `pjtlist` + `milestone` |
 | `안벽기간` | 위 셋 어디에도 들어가지 않는 나머지 | — |
 | `인도선` | `DL`이 지났다 | `milestone` |
@@ -301,10 +306,32 @@ CSV가 없으면 `seed_masters`는 `"ship_model.csv 가 없어 건너뜀"` 경�
 
 "지금 단계"는 기준일(보통 오늘)이 어느 구간에 드는지로 정한다. 어느 구간에도 들지 않으면 `안벽기간`이다.
 
-### 10-3. 남은 작은 것
+### 10-3. 남은 것 — 실제 헤더 목록
 
-- `trial_schedule.일정구분`의 **값 목록 전체**를 아직 모른다. 스키마에 `LC~GT+1`·`AC`·`통합시운전`·`ST,DP`·`인도준비` **"등"**으로만 적혀 있다. 어느 값이 시운전에 해당하는지 확정하려면 전체 목록이 필요하다. 그때까지는 `AC`만 앵카링으로, `ST,DP`·`통합시운전`을 시운전으로 본다.
-- **표 이름과 칸 이름.** §9-A에 따라 내가 짓지 않는다. `data_manager`의 헤더를 그대로 쓸지(`project`·`PJT`·`일정구분`·`출항`·`복귀`), 우리 쪽 이름으로 받을지 정해야 한다. 이 표는 기준정보 15종에 없으므로 만들기 전에 `requirements.md`에 먼저 적는다 (`CLAUDE.md` §8-7).
+**`data_manager` 저장소에서는 더 확인할 수 없다.** `db_connector.gen_milestone()`이
+`SELECT * FROM pjtevnt`로 통째로 읽어 `PJT`→`project` 리네임과 `ensure_sn`만 적용하고 저장한다.
+**컬럼 목록이 코드에 없다** — 운영 MySQL `pjtevnt`가 가진 그대로다.
+`DATA_SCHEMA.md`의 15개 이벤트는 **2026-08-11 시점의 문서 스냅샷**이고, 같은 문서가
+"운영 DB에 이벤트가 추가되면 컬럼이 늘어난다. 컬럼 존재 여부를 확인하고 접근할 것"이라고 적고 있다.
+저장소에 실제 parquet은 커밋돼 있지 않다.
+
+**확인해야 할 것 두 가지 — 실제 `milestone.parquet`에서 뽑는다**
+
+1. **`AC` 계열 컬럼이 있는가** (`PERFAC`·`ACFROM`/`ACTO` 같은 이름). 있으면 앵카링기간이 `AC + Cold`로 완성된다
+2. **뜻이 적히지 않은 코드 여섯 개** — `SP` · `BT` · `GT` · `CMR` · `IE` · `MT`. 이 중 앵커링에 해당하는 것이 있는지
+
+확인용 코드 (사내망에서 `milestone.parquet` 경로를 넣고 돌린다):
+
+```python
+import pandas as pd
+cols = pd.read_parquet(r"...\milestone.parquet").columns
+evts = sorted({c[4:] for c in cols if c[:4] in ("PLAN", "PROS", "PERF")})
+print(len(cols), "컬럼 /", len(evts), "이벤트")
+print(evts)
+```
+
+이 목록이 나오면 §10-2의 앵카링 경계를 확정하고, 이벤트 표를 `requirements.md`에 적는다
+(기준정보 15종에 없는 표이므로 — `CLAUDE.md` §8-7).
 
 ### 10-4. 덤으로 확인된 것 — 사내망 전환에 쓴다
 
