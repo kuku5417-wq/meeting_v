@@ -58,7 +58,7 @@ flowchart LR
 - [x] 기준정보 CSV 15종 112행 + `_check.py`
 - [x] 화면 시안 v2 (`docs/_시안/` HTML·README 명세)
 - [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
-- [~] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`. 로컬 커밋 `d464b6b` (브랜치 `chore/guard-hooks-and-roadmap`). **`main` 병합·push 남음**
+- [~] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`. `d464b6b`·`d566961`을 `main`에 병합 완료. **push 남음** — `main`이 `origin/main`보다 5커밋 앞서 있다 (이 2건 + 이전 `6720745`·`f27d8e4`·`45e4f0f`도 아직 안 올라감)
 - [ ] `SPEC.md` §9 정해야 할 것 4건 확정 (모델 약호, 분해 수준, `series_no` 기준, 단계 어휘)
 - [ ] `requirements.md` §2 미결 2건 확정 — `slide_object.props` 타입별 칸 분리 여부, 나머지 운영 표 정의 (**P3 S5·S7의 선행**)
 - [ ] 시안 중 확정안 표시, 나머지는 `docs/_시안/보관/`으로
