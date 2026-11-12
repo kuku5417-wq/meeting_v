@@ -274,7 +274,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | `ROADMAP.md` 재작성 — P0~P5 체계로 전환, 기존 `roadmap.md` 삭제 | `roadmap.py update`·`brief`·`check` 전부 EXIT=0 | `d464b6b` |
 | 2026-11-12 | P0 | `main` push — `origin/main`을 `bdebcc9` → `1f83269`로 올림. 미push였던 이전 3커밋 포함 | 올라간 파일 24개 점검, 비밀·원본 데이터 없음 (샘플 CSV는 가상값) | `1f83269` |
 | 2026-11-12 | P2 S-1 | `CLAUDE.md` 신설 (도메인 원칙 9개·용어 17개·폴더 구조·실행 명령) + `diagnostics/` 4종 신설 | `check_data` EXIT=0 (15표 112행·`hull` 12칸·시드 순서 15종·자기참조 부모 순서) / `check_db` EXIT=1 "모델 없음"(정상) / `check_libs` EXIT=1 필수 3개 미설치(S0 전 정상) / `check_llm` EXIT=0 SKIP / `_check.py` EXIT=0 유지 | `823c6a3` |
-| 2026-11-12 | P2 S0 | 골격·설정 7개 + `config/__init__.py` 신설, `uv sync`로 의존성 설치, `.claude/launch.json`에 앱 설정 추가 | `import config.settings, config.paths` EXIT=0 / `check_libs` **EXIT=0** (streamlit 1.67.0·sqlalchemy 2.1.8·pandas 3.1.1·python-pptx 1.0.2) / 앱이 8501에서 떠서 빈 홈 표시, 콘솔 오류 없음 / 사이드바에 기준정보 CSV 15장·DB 없음·LLM 없음이 창구를 거쳐 나옴 | |
+| 2026-11-12 | P2 S0 | 골격·설정 7개 + `config/__init__.py` 신설, `uv sync`로 의존성 설치, `.claude/launch.json`에 앱 설정 추가 | `import config.settings, config.paths` EXIT=0 / `check_libs` **EXIT=0** (streamlit 1.67.0·sqlalchemy 2.1.8·pandas 3.1.1·python-pptx 1.0.2) / 앱이 8501에서 떠서 빈 홈 표시, 콘솔 오류 없음 / 사이드바에 기준정보 CSV 15장·DB 없음·LLM 없음이 창구를 거쳐 나옴 | `8d23147` |
 
 ## 추가·변경 기록
 
