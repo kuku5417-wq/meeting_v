@@ -1,6 +1,6 @@
 ---
 name: spec-guard
-description: 생성된 코드가 requirements.md와 어긋나는지만 검사한다. 읽기 전용이라 고치지 않고 보고만 한다. code-gen 이 슬라이스를 끝낸 뒤, 커밋 전, 또는 "스펙대로 됐는지 봐줘"라고 할 때 쓴다.
+description: 생성된 코드가 requirements.md와 어긋나는지만 검사한다. 읽기 전용이라 고치지 않고 보고만 한다. code-gen 이 슬라이스를 끝낸 뒤, 커밋 전, 또는 "스펙대로 됐는지 봐줘"라고 할 때 쓴다. 코드를 고치거나 새로 만들 때는 쓰지 않는다.
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---
@@ -61,7 +61,14 @@ for f in diagnostics/check_*.py; do python -X utf8 "$f"; done
 2. [금지 패턴] views/ledger.py:12 — st.secrets["llm"] 직접 호출
    config.settings.secrets 를 거쳐야 한다
 
-검증: _check.py EXIT=0 / check_data ✅ / check_db ❌(hull 0건)
+검증: _check.py EXIT=0 / check_data [OK] / check_db [FAIL](hull 0건)
 ```
 
 위반이 없으면 한 줄로 끝낸다: `위반 없음. _check.py EXIT=0, 진단 4개 전부 통과.`
+
+모든 보고의 끝에 두 줄을 붙인다. 열어 보지 않은 파일은 지적하지 않고 "확인하지 못한 것"에 적는다.
+
+```
+확인하지 못한 것: requirements.md §1-3 (파일 없음) / 없음
+판정: 통과  또는  판정: 반려 (N건)
+```

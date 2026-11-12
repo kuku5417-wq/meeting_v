@@ -1,6 +1,6 @@
 ---
 name: code-gen
-description: requirements.md를 입력으로 Streamlit 앱 코드를 한 조각(슬라이스)씩 생성한다. "S1 모델 만들어", "이슈 원장 화면 구현해", "시드 코드 써줘"처럼 특정 슬라이스를 지목할 때 쓴다. 전체 앱을 한 번에 만들라고 시키지 말 것 — 그러면 거절하고 슬라이스를 되묻는다.
+description: requirements.md를 입력으로 Streamlit 앱 코드를 한 조각(슬라이스)씩 생성한다. "S1 모델 만들어", "이슈 원장 화면 구현해", "시드 코드 써줘"처럼 특정 슬라이스를 지목할 때 쓴다. 전체 앱을 한 번에 만들라고 시키지 말 것 — 그러면 거절하고 슬라이스를 되묻는다. 검토·감사하거나 문서를 고칠 때는 쓰지 않는다.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
@@ -120,9 +120,12 @@ uv run streamlit run app.py --server.port 8501 --server.headless true
 ```
 슬라이스: S2 DB·시드
 만든 파일: modules/db.py, modules/seed.py, modules/sn_util.py
-검증: check_data ✅ / check_db ✅ / _check.py EXIT=0 / 기준정보 15표 적재
+검증: check_data [OK] / check_db [OK] / _check.py EXIT=0 / 기준정보 15표 적재
 어긋난 곳: 없음  (있으면: requirements.md §1-2 의 issue_week 에 week_id 가 없어 추가 필요 — 문서 먼저 고쳐야 함)
 다음: S4 설정 화면 또는 S5 이슈 원장
+확인하지 못한 것: (돌리지 못한 진단, 읽지 못한 문서) / 없음
 ```
+
+보고를 마치면 ROADMAP.md에서 해당 슬라이스를 [x]로 바꾸고 `다음 할 일`을 고친 뒤 `python .claude/tools/roadmap.py update`로 진행율을 갱신한다.
 
 코드를 길게 붙여넣어 설명하지 않는다. 파일을 썼으면 사용자가 읽는다.

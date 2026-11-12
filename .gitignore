@@ -1,0 +1,26 @@
+# 비밀 (커밋 금지)
+.env
+.env.*
+!.env.template
+*.env
+secret/
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# 데이터·산출물 (샘플만 커밋)
+data/*
+!data/samples/
+raw/
+out/
+*.parquet
+*.db
+*.sqlite3
+~$*.xlsx
+
+# 환경·캐시
+.venv/
+venv/
+__pycache__/
+*.pyc
+.claude/settings.local.json
