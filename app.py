@@ -16,7 +16,7 @@ from views import ledger as ledger_view
 from views import settings as settings_view
 from views import theme
 
-st.set_page_config(page_title="회의자료·지식화", page_icon="📋", layout="wide")
+st.set_page_config(page_title="회의자료·지식화", page_icon=":material/description:", layout="wide")
 
 # 시안 토큰을 입힌다 (SD). 화면을 그리기 전에 한 번만.
 theme.apply()
@@ -29,7 +29,7 @@ def home() -> None:
         "기준정보(S1·S2)·사내 LLM 창구(S3)·설정(S4)·이슈 원장(S5)·기록함(S6)까지 와 있다. "
         "다음은 **S7 회의자료**(후보 이슈 → 회의자료 구성). "
         "단계와 진행율은 `ROADMAP.md`, 만들 것은 `requirements.md`.",
-        icon="📌",
+        icon=":material/flag:",
     )
 
 

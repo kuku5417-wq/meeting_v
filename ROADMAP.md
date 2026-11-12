@@ -355,13 +355,21 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 `.streamlit/config.toml` 테마 4색 매핑 · `views/theme.py` 토큰 주입 · 의미 색 배지(`chip`) ·
 이슈 상세 머리에 유형·상태·경보 배지.
 
-**다시 해야 하는 것** — 1차가 디자인 묶음보다 먼저라 어긋난 곳이 있다
+**한 것** (2026-11-13, SD 2차 — `design_check` **0건**)
 
-1. **사이드바를 흰색으로.** 1차는 `tokens.css`의 네이비(`#1c2f4f`)로 만들었다. 2026-11-13 결정과 반대다
-2. **앱 쪽 `tokens.css`를 따로 둔다.** 규칙 1이 "hex를 직접 쓸 수 있는 곳은 `tokens.css`와 `.streamlit/config.toml`뿐"이라 적는데, `views/theme.py`가 값을 **복사**해 두었다 → `design_check` 12건.
-   `docs/_시안/design/tokens.css`는 원본이라 고치지 않는다. 앱 쪽 파일을 만들어 흰 사이드바 값으로 덮고 `theme.py`는 **읽기만** 한다
-3. **없는 토큰 둘을 정한다** — 규칙이 쓰는 `--sep`(사이드바 경계선)·`--warn-soft`(근거 표시 바탕)가 `tokens.css`에 없다
-4. **이모지를 걷어낸다** — 규칙 3. `design_check` 11건 (`app.py` 2 · `ledger` 4 · `inbox` 2 · `llm_client` 1 · `milestone` 1). `:material/이름:` + 글자로 바꾼다
+1. ✅ **흰 사이드바.** 지금 메뉴는 `--accent-soft` 바탕 + `--accent-ink` 글자 + `--accent` 왼쪽 막대
+2. ✅ **앱 쪽 `static/tokens.css` 신설.** `views/theme.py`가 시안 원본과 앱 파일을 **읽어서** 넣는다 —
+   `.py`에 색이 없다(규칙 2-1). 시안 파일은 원본이라 고치지 않았고, 다크 블록은 `theme.py`가 걷어낸다
+3. ✅ **`--sep`·`--warn-soft` 신설.** 값을 지어내지 않고 이미 있는 토큰을 가리킨다
+   (`--sep: var(--line)` · `--warn-soft: var(--signal-soft)`). 시안이 제 값을 정하면 그때 여기만 바꾼다
+4. ✅ **이모지 11건 제거** → `:material/` 아이콘
+
+   > 아이콘이 처음에 **"flag"라는 글자로** 나왔다. 글꼴 규칙이 넓어 아이콘 span 까지 덮어
+   > Material 리거처가 깨진 것이다. 아이콘 `data-testid` 셋만 `"Material Symbols Rounded"`로 되돌렸다.
+   > 그 글꼴은 Streamlit 이 함께 넣어 둬서 사외망·사내망 모두 뜬다.
+
+**남은 것**
+
 5. **글꼴** — 서브셋(823KB)을 앱에 둘지 아직. 지금은 대체 사슬(맑은 고딕)로 떨어진다
 
 **컴포넌트 토큰과 어긋나는 자리** (S5·S4를 다시 손대는 일이라 위 다섯보다 크다)
@@ -373,7 +381,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 저장 | 자동 저장, 저장 버튼 없음 | 저장 버튼 | 4곳 |
 | 주 버튼 | 한 화면에 하나 | `ledger` 5개 · `inbox` 2개 | — |
 
-**언제 하나** — 1~4는 S7 전에. 5와 컴포넌트 토큰은 그 화면을 손댈 때 함께.
+**언제 하나** — 5와 컴포넌트 토큰은 그 화면을 손댈 때 함께 한다.
 
 ## 뚫어 보기 기록 (P1)
 
@@ -404,6 +412,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-13 | SD 2차 | 흰 사이드바, `static/tokens.css` 신설(`theme.py`는 읽기만), `--sep`·`--warn-soft` 신설, 이모지 11건 → `:material/` 아이콘 | `design_check` **0건** / 진단 4개·`_check.py` EXIT=0 / 앱에서 흰 사이드바·지금 메뉴 강조·아이콘 글리프 확인 | |
 | 2026-11-12 | P3 S6 | `modules/extract.py`·`views/inbox.py` 신설, `app.py`에 기록함 화면 | `locate` doctest 3건 / **근거 규칙(§6-3)이 코드로 막힌다** — 지어낸 후보(메모에 없는 `quote`)와 제목 없는 후보를 버리고 왜 버렸는지 화면에 적는다 / 등록 시 `source_span` 4칸 + `ai_field_log` 기록 / 사외망에서는 `LLMNotConfigured` → 직접 적기로 강등, 사람이 적은 값은 근거 구간 없이 등록 / 진단 4개 EXIT=0 / 앱에서 기록함 렌더 | |
 | 2026-11-12 | P3 S5 (2/2) | `modules/milestone.py` 신설(§10-2 계산), `data/samples/mirror/` 샘플 2종, `config/paths.py`에 `MIRROR_DIR`. F5 초안·사진, F21 경보, F23 일괄을 `issues.py`·`ledger.py`에 추가. **§9-4 적용 완료** — `hull.stage` 11척을 계산값으로 바꾸고 `_check.py` `STAGES`에서 옛 표기 2개 제거 | 13호선 단계 계산이 5개 어휘를 모두 냄 (안벽 5·시운전 3·Layup 2·인도선 2·앵카링 1) / `_check.py` 규칙 7개 통과 / F21 `ISS-2026-0001` DL 목표 → 「일정 임박 D+28」 / F5 초안 저장·사진 `data/photos/89/<sha>.png` / F23 2건 일괄 변경 + 이력 기록 / 진단 4개 EXIT=0 / 앱에서 4개 탭 렌더 | |
 | 2026-11-12 | P3 S5 (1/2) | 운영 표 16종 선언(`models.py` 15→31표), `config/paths.py`에 사진 폴더 창구, `modules/issues.py`·`views/ledger.py` 신설, `app.py`에 원장 화면 | F3 지식 매핑이 실제로 걸림 — `2511`→`SN2511`(ensure_sn), `DG2`→`EQ-SN2511-GE-02`·`C/P #3`→`EQ-SN2514-CP-03`·`배기온도 편차`→`SY-EXH-DEV`(별칭), 기준정보에 없는 `9999`는 0/5 「미등록」 / ID 발급 `ISS-2026-0001~0003` / 주차 `2026-W46` 자동 생성 / F4 주차별 진행 한 줄 / `check_db` EXIT=0(기준정보 15표 그대로, 운영 16표는 별도로 보고) / 앱에서 그리드·등록·상세 렌더 | |

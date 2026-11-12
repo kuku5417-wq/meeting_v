@@ -13,6 +13,12 @@ ROOT = Path(__file__).resolve().parent.parent
 # 문서·명세
 DOCS_DIR = ROOT / "docs"
 MOCKUPS_DIR = DOCS_DIR / "_시안" / "design" / "mockups"
+DESIGN_RULES = DOCS_DIR / "디자인_규칙.md"  # 디자인 정본
+
+# 디자인 토큰 — 시안 것이 원본이고(고치지 않는다), 앱이 달라지는 값만 덮어쓴다.
+# views/theme.py 가 이 순서로 넣는다 (디자인_규칙 §1).
+MOCKUP_TOKENS = DOCS_DIR / "_시안" / "design" / "tokens.css"
+APP_TOKENS = ROOT / "static" / "tokens.css"
 
 # 데이터
 DATA_DIR = ROOT / "data"

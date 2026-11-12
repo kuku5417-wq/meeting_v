@@ -1,43 +1,29 @@
-"""시안 디자인 토큰을 앱에 입힌다 (SD).
+"""디자인 토큰을 앱에 입힌다 (SD). 규칙은 `docs/디자인_규칙.md`.
 
-정본은 `docs/_시안/design/tokens.css` 다. **값을 여기서 새로 만들지 않는다** — 옮겨 적을 뿐이다.
-시안이 바뀌면 여기도 같이 고친다. 토큰이 두 군데로 갈리면 화면마다 색이 달라진다.
+**이 파일에 색을 적지 않는다.** hex 를 직접 쓸 수 있는 곳은 `tokens.css` 와
+`.streamlit/config.toml` 뿐이다 (디자인_규칙 §2-1). 여기는 **토큰 파일을 읽어 넣기만** 한다.
 
-**라이트만 쓴다** (2026-11-12 결정). 시안에는 `prefers-color-scheme` 다크도 있지만 받지 않는다.
-그래서 여기 값은 `tokens.css` 의 `:root` 블록(라이트)만이다.
+| 넣는 순서 | 파일 | |
+|---|---|---|
+| 1 | `docs/_시안/design/tokens.css` | 시안 원본. **고치지 않는다** |
+| 2 | `static/tokens.css` | 앱에서 달라지는 값만 (흰 사이드바, `--sep`, `--warn-soft`) |
 
-**글꼴은 대체 사슬로 간다.** 시안의 서브셋(`docs/_시안/app/static/fonts/*.woff2`, 823KB)은
-아직 저장소 앱 쪽에 두지 않았다 — 그 결정이 남아 있다(`ROADMAP.md` 「디자인」 절).
-지금은 `tokens.css` 가 적어 둔 대체 사슬(IBM Plex Sans KR → Apple SD Gothic Neo → 맑은 고딕)로
-떨어진다. 서브셋을 넣으면 시안과 똑같아진다.
+**라이트만 쓴다** (2026-11-12 결정). 시안 파일에는 `@media (prefers-color-scheme: dark)` 와
+`[data-theme]` 블록이 있는데 `_light_only()` 가 걷어낸다.
 
-색의 뜻 (시안 그대로)
-  --share  공유정보 · --danger 문제점/빈 필수 · --signal 이슈/확인 필요
-  --ok     종결/완료 · --decide 결정 필요 · --accent 주 색/대기 중인 일
+색의 뜻은 디자인_규칙 §2-2 — `--share` 공유정보 · `--danger` 문제·빈 필수 ·
+`--signal` 이슈·확인 필요·발행 뒤 바뀜 · `--accent` 주 동작·대기 · `--ok` 종결·완료 ·
+`--decide` 결정. 장식에 쓰지 않는다.
 """
 from __future__ import annotations
 
+import re
+
 import streamlit as st
 
-# tokens.css :root (라이트) 에서 앱 화면이 쓰는 것만 옮겼다. 슬라이드·사진 토큰은 S8 에서.
-TOKENS = """
-  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f3f5f8;
-  --fg:#111114; --muted:#48484d; --line:#dfe4ea; --field-line:#7d8693;
-  --accent:#0963c4; --accent-soft:#e5f0fd; --accent-fg:#ffffff; --accent-ink:#0857b0;
-  --side-bg:#1c2f4f; --side-fg:#dbe3ee; --side-muted:#a9b6c8; --side-bar:#4c9bff;
-  --shadow:0 1px 2px rgba(16,24,40,.06),0 0 0 1px rgba(16,24,40,.04);
-  --signal:#9a5a00; --signal-soft:#fbefd9;
-  --danger:#b83a26; --danger-soft:#f8e3df;
-  --ok:#276d43; --ok-soft:#dff0e5;
-  --share:#35589c; --share-soft:#e2e9f6;
-  --decide:#6a3fb5; --decide-soft:#ece4f8;
-  --body:"Meeting Sans KR","IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --mono:"Meeting Mono","IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-  --fs-1:12px; --fs-2:14px; --fs-3:16px; --fs-4:20px; --fs-5:26px;
-  --fw-strong:600;
-"""
+from config.paths import APP_TOKENS, MOCKUP_TOKENS
 
-# 상태·유형 → 의미 색 토큰. 화면이 색을 직접 고르지 않게 한 군데 둔다.
+# 상태·유형 → 의미 색 토큰. 화면이 색을 직접 고르지 않게 한 군데 둔다 (디자인_규칙 §2-2).
 MEANING = {
     "신규": "signal",
     "진행": "accent",
@@ -53,51 +39,91 @@ MEANING = {
     "연결됨": "ok",
 }
 
-_CSS = f"""
-<style>
-:root {{{TOKENS}}}
+# 다크 블록을 걷어낸다 — @media(...){ :root...{...} } 와 :root[data-theme...]{...}
+_DARK_MEDIA = re.compile(r"@media[^{]*prefers-color-scheme[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", re.S)
+_DARK_ATTR = re.compile(r":root\[data-theme[^{]*\{[^{}]*\}", re.S)
+_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 
-html, body, [class*="st-"], .stMarkdown, button, input, textarea, select {{
+
+def _light_only(css: str) -> str:
+    """라이트 블록만 남긴다. 주석도 턴다 (주석 안에 다크 값이 적혀 있다)."""
+    return _DARK_ATTR.sub("", _DARK_MEDIA.sub("", _COMMENT.sub("", css))).strip()
+
+
+def _tokens() -> str:
+    """두 토큰 파일을 라이트만 남겨 이어 붙인다. 파일이 `:root{...}` 를 갖고 있으므로 그대로 쓴다."""
+    parts = []
+    for path in (MOCKUP_TOKENS, APP_TOKENS):
+        if path.exists():
+            parts.append(_light_only(path.read_text(encoding="utf-8")))
+    return "\n".join(parts)
+
+
+# 토큰 변수만 쓴다. 이 안에 hex 가 없어야 한다.
+_LAYOUT = """
+html, body, [class*="st-"], .stMarkdown, button, input, textarea, select {
   font-family: var(--body);
-}}
-code, pre, .stCode {{ font-family: var(--mono); }}
+}
+code, pre, .stCode { font-family: var(--mono); }
 
-/* 사이드바는 시안의 네이비 */
-section[data-testid="stSidebar"] {{ background: var(--side-bg); }}
-section[data-testid="stSidebar"] * {{ color: var(--side-fg); }}
-section[data-testid="stSidebar"] [data-testid="stMetricValue"] {{ color: #ffffff; }}
+/* 아이콘은 글꼴이 바뀌면 글자로 보인다 (":material/flag:" 가 "flag" 로).
+   위 규칙이 넓어서 아이콘 span 까지 덮으므로 여기서 되돌린다.
+   이 글꼴은 Streamlit 이 함께 넣어 둬서 사외망·사내망 모두 뜬다. */
+[data-testid="stIconMaterial"],
+[data-testid="stAlertDynamicIcon"],
+[data-testid="stElementToolbarButtonIcon"] {
+  font-family: "Material Symbols Rounded";
+}
+
+/* 사이드바는 흰색 — 2026-11-13 결정 (디자인_규칙 §1). 시안 v2m 의 네이비를 따르지 않는다 */
+section[data-testid="stSidebar"] {
+  background: var(--side-bg);
+  border-right: 1px solid var(--sep);
+}
+section[data-testid="stSidebar"] * { color: var(--side-fg); }
 section[data-testid="stSidebar"] [data-testid="stMetricLabel"],
-section[data-testid="stSidebar"] .stCaption {{ color: var(--side-muted); }}
-section[data-testid="stSidebar"] code {{ background: rgba(255,255,255,.08); color: var(--side-fg); }}
+section[data-testid="stSidebar"] .stCaption { color: var(--side-muted); }
+section[data-testid="stSidebar"] code {
+  background: var(--surface-2); color: var(--side-fg);
+}
+/* 지금 메뉴 — 바탕 accent-soft, 글자 accent-ink, 왼쪽 막대 accent */
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding-left: 8px;
+}
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) * {
+  color: var(--accent-ink);
+  font-weight: var(--fw-strong);
+}
 
-/* 본문 카드 — 흰 바탕에 옅은 테두리 (시안의 --shadow) */
-[data-testid="stMetric"], div[data-testid="stExpander"], div[data-testid="stForm"],
-div[data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"]:has(> div) {{
+[data-testid="stMetric"] {
   background: var(--surface);
-}}
-[data-testid="stMetric"] {{
-  border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; box-shadow: var(--shadow);
-}}
-h1, h2, h3 {{ font-weight: var(--fw-strong); letter-spacing: -.01em; }}
-h1 {{ font-size: var(--fs-5); }}
-h2 {{ font-size: var(--fs-4); }}
-h3 {{ font-size: var(--fs-3); }}
-.stCaption, small {{ font-size: var(--fs-1); color: var(--muted); }}
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+h1, h2, h3 { font-weight: var(--fw-strong); letter-spacing: -.01em; color: var(--fg); }
+h1 { font-size: var(--fs-5); }
+h2 { font-size: var(--fs-4); }
+h3 { font-size: var(--fs-3); }
+.stCaption, small { font-size: var(--fs-1); color: var(--muted); }
 
 /* ID·호선번호처럼 숫자가 줄 맞는 곳 */
-[data-testid="stDataFrame"] {{ font-variant-numeric: tabular-nums; }}
+[data-testid="stDataFrame"] { font-variant-numeric: tabular-nums; }
 
-.sd-chip {{
-  display:inline-block; padding:1px 8px; border-radius:99px;
-  font-size: var(--fs-1); font-weight: var(--fw-strong); line-height:1.7;
-}}
-</style>
+.sd-chip {
+  display: inline-block; padding: 1px 8px; border-radius: 99px;
+  font-size: var(--fs-1); font-weight: var(--fw-strong); line-height: 1.7;
+}
 """
 
 
 def apply() -> None:
     """화면을 그리기 전에 한 번 부른다. `app.py` 에서만 부른다."""
-    st.markdown(_CSS, unsafe_allow_html=True)
+    st.markdown(f"<style>\n{_tokens()}\n{_LAYOUT}</style>", unsafe_allow_html=True)
 
 
 def chip(text: str, kind: str | None = None) -> str:

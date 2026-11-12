@@ -39,7 +39,7 @@ LAYUP = "Layup"
 
 
 def _read(name: str) -> list[dict[str, str]]:
-    """★ 사내망 전환 지점 — 여기만 parquet 읽기로 바꾼다."""
+    """사내망 전환 지점 — 여기만 parquet 읽기로 바꾼다."""
     path = Path(MIRROR_DIR) / f"{name}.csv"
     if not path.exists():
         return []

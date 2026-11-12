@@ -137,7 +137,7 @@ def _alert_tab(block_id: str) -> None:
     """F21 — 「~전 해결」 목표와 경보."""
     info = issues.due_of(block_id)
     if not info["hull"]:
-        st.warning("호선이 매핑돼야 일정 경보가 걸린다. 「지식 매핑」 탭에서 호선을 이어 주십시오.", icon="⚠️")
+        st.warning("호선이 매핑돼야 일정 경보가 걸린다. 「지식 매핑」 탭에서 호선을 이어 주십시오.", icon=":material/warning:")
 
     col1, col2, col3 = st.columns(3)
     evt = col1.selectbox(
@@ -157,11 +157,11 @@ def _alert_tab(block_id: str) -> None:
     if info["target"]:
         left = info["left"]
         if info["label"] == "기한 지남":
-            st.error(f"**기한 지남** — 목표 {info['target']} (D{left:+d})", icon="🔴")
+            st.error(f"**기한 지남** — 목표 {info['target']} (D{left:+d})", icon=":material/error:")
         elif info["label"] == "일정 임박":
-            st.warning(f"**일정 임박** — 목표 {info['target']} (D{left:+d})", icon="🟠")
+            st.warning(f"**일정 임박** — 목표 {info['target']} (D{left:+d})", icon=":material/schedule:")
         else:
-            st.info(f"목표 {info['target']} (D{left:+d})", icon="🗓️")
+            st.info(f"목표 {info['target']} (D{left:+d})", icon=":material/event:")
         st.caption(
             f"날짜는 저장하지 않는다. {info['hull']}의 일정에서 볼 때마다 다시 잡는다 — "
             "일정이 당겨지면 경보가 저절로 다시 켜진다."
@@ -258,7 +258,7 @@ def render() -> None:
     if rows:
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     else:
-        st.info("조건에 맞는 이슈가 없다. 아래에서 등록할 수 있다.", icon="📭")
+        st.info("조건에 맞는 이슈가 없다. 아래에서 등록할 수 있다.", icon=":material/inbox:")
 
     if rows:
         st.divider()

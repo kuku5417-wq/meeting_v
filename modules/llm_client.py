@@ -79,7 +79,7 @@ def ask_json(prompt: str, system: str = DEFAULT_SYSTEM, temperature: float = 0.0
 
 
 def _chat(system: str, user_prompt: str, temperature: float) -> str:
-    """★ 사내망 전환 지점 — 이 함수 하나만 채운다. 모양은 `SPEC.md` §11.
+    """사내망 전환 지점 — 이 함수 하나만 채운다. 모양은 `SPEC.md` §11.
 
     사외망 작업본에는 호출 코드를 두지 않는다.
     """

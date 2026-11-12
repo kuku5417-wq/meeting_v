@@ -79,7 +79,7 @@ def render() -> None:
         st.success(f"메모 저장 — {mid[:8]}")
 
     if not is_configured():
-        col2.info("사내 LLM 설정이 없어 **직접 적기**로 간다. 사외망에서는 정상이다.", icon="✍️")
+        col2.info("사내 LLM 설정이 없어 **직접 적기**로 간다. 사외망에서는 정상이다.", icon=":material/edit_note:")
 
     memo_id = st.session_state.get("last_memo")
     if memo_id:
@@ -103,7 +103,7 @@ def render() -> None:
                 st.warning(
                     "**근거를 찾지 못해 버린 후보** — 메모에 없는 말은 싣지 않는다.\n\n"
                     + "\n".join(f"- {d}" for d in dropped),
-                    icon="🚫",
+                    icon=":material/block:",
                 )
             cands = st.session_state.get("cands") or []
             if cands:
