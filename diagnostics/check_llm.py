@@ -33,6 +33,24 @@ def load_secrets() -> tuple[object | None, str]:
     return secrets, ""
 
 
+def _report_client() -> int:
+    """설정이 없어도 창구(S3)가 멀쩡한지는 본다. 호출은 하지 않는다."""
+    try:
+        from modules.llm_client import parse_json
+    except ModuleNotFoundError as e:
+        print(f"[--]   modules.llm_client 아직 없음 ({e.name}) — S3 에서 만든다")
+        return 0
+    except Exception as e:
+        print(f"[FAIL] modules.llm_client import 실패: {type(e).__name__}: {e}")
+        return 1
+    # 게이트웨이 응답은 <think> 블록과 ``` 펜스가 섞여 온다 (SPEC §11).
+    if parse_json('```json\n{"ok": 1}\n```') != {"ok": 1}:
+        print("[FAIL] parse_json 이 펜스를 벗기지 못한다")
+        return 1
+    print("[OK]   modules.llm_client 창구 있음 (parse_json 동작 확인, 호출은 안 함)")
+    return 0
+
+
 def main() -> int:
     secrets, msg = load_secrets()
     if secrets is None:
@@ -48,8 +66,8 @@ def main() -> int:
     found = {k: bool(get(k)) for k in NEEDED}
     if not any(found.values()):
         print("[SKIP] 사내 LLM 설정 없음 (" + ", ".join(NEEDED) + " 비어 있음)")
-        print("S3 에서 .streamlit/secrets.toml 에 채운다. 값은 로그에 찍지 않는다.")
-        return 0
+        print("사외망에서는 정상이다. 사내망에서 .streamlit/secrets.toml 을 채운다 (값은 로그에 찍지 않는다).")
+        return _report_client()
 
     for k, ok in found.items():
         print(f"  {'[OK]  ' if ok else '[--]  '} {k} {'설정됨' if ok else '없음'}")

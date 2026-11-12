@@ -338,6 +338,33 @@ print(evts)
 
 - **`pjtlist.parquet`가 우리 `hull`의 실데이터 출처다.** `SHIPNUM`↔`id` · `TITLE`↔`title` · `SHIPTYPE`↔`ship_type_id` · `TYPEMODEL`↔모델 · `REGOWNER`↔`owner_id` · `MAINHULLNUM`↔`sister_group_id` · **`SEQNO`↔`series_no`** · `SHIPCLASS`↔`ship_class` · `DOCK`↔`dock`. §3-2가 "pjtlist 동기화로 들어온 칸"이라 적은 것이 이것이다.
 - **§9-3의 `series_no`는 사실 `pjtlist.SEQNO`에서 온다.** 계약 순서인지는 운영 DB가 정한다 — 우리가 매기는 값이 아니다.
-- **`ensure_sn`이 이미 있다.** `data_manager/sn_util.py`가 `2601`·`S2601`·`SN2601` → `SN2601`로 수렴시킨다. `code-gen.md` §4③이 요구하는 것과 같은 동작이므로, S2에서 만들 `modules/sn_util.py`는 **이 함수와 같은 규칙으로** 쓴다.
+- **`ensure_sn`이 이미 있다.** `data_manager/sn_util.py`가 `2601`·`S2601`·`SN2601` → `SN2601`로 수렴시킨다. `code-gen.md` §4③이 요구하는 것과 같은 동작이라, `modules/sn_util.py`(S2)를 **같은 규칙으로** 맞췄다.
+
+## 11. 사내 LLM 전환 지점
+
+`modules/llm_client.py`의 **`_chat()` 한 함수**가 전환 지점이다. 사외망 작업본에는 호출 코드를 두지 않는다
+(`code-gen.md` §3 — SOLA·프록시·외부 API 금지). 사내망 고정본(P5)에서 이 함수만 채운다.
+
+**근거**: `data_manager/llm_client.py`의 사내 게이트웨이 호출. 같은 사내망, 같은 인증 방식이다.
+
+| | |
+|---|---|
+| 프로토콜 | OpenAI 호환 — `POST {base_url}/chat/completions` |
+| `base_url` | OpenAI 호환 base (끝이 `/v1` 꼴). `secrets.get("llm_base_url")` |
+| 인증 | `Authorization: Bearer <key>` · `Content-Type: application/json` |
+| 본문 | `messages`(system + user) · `temperature` · `response_format={"type":"json_object"}` |
+| `model` | 비어 있으면 **본문에서 생략한다** |
+| `max_tokens` | **보내지 않는다.** 사내 게이트웨이가 400으로 거부한다 |
+| 응답 | `choices[0].message.content` |
+
+**사내망에서만 필요한 것 세 가지** — 사외망 코드에는 넣지 않는다.
+
+1. **프록시 우회.** 사내 게이트웨이는 프록시를 거치지 않고 직접 접속한다.
+2. **인증서 검증 생략.** 사내 자가서명 인증서다.
+3. **HTTP 라이브러리.** OpenAI SDK(httpx)는 사내 MITM 프록시에서 멈춘다(hang). `requests`로 호출한다.
+
+**응답 본문이 깨끗하지 않다.** `<think>…</think>` 블록과 ``` 펜스가 섞여 온다.
+`modules/llm_client.py`의 `parse_json()`이 벗겨내므로 `_chat()`은 **글자를 그대로 돌려주면 된다.**
+이 함수는 망과 무관한 순수 함수라 사외망에서 시험해 두었다 (doctest).
 
 이 표는 기준정보 15종에 없으므로, 만들기 전에 `requirements.md` §1-1 또는 §1-2에 먼저 적어야 한다 (`CLAUDE.md` §8-7).

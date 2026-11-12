@@ -6,14 +6,14 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 50%** (17/34) █████░░░░░
+**전체 진행율 53%** (18/34) █████░░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
 |---|---|---|---|
 | P0. 정본 정리 | 8/10 | 80% | ████████░░ |
 | P1. 안전장치 (3일차 교육 적용) | 5/6 | 83% | ████████░░ |
-| P2. 기반 | 4/5 | 80% | ████████░░ |
+| P2. 기반 | 5/5 | 100% | ██████████ |
 | P3. 화면 | 0/7 | 0% | ░░░░░░░░░░ |
 | P4. 검증 | 0/3 | 0% | ░░░░░░░░░░ |
 | P5. 사내망 고정본 | 0/3 | 0% | ░░░░░░░░░░ |
@@ -21,7 +21,7 @@
 
 ## 다음 할 일
 
-1. **P2 S3 — LLM.** `modules/llm_client.py` 하나. 사내 LLM 창구를 한 군데로 두고, 설정은 `config.settings.secrets`를 거친다. 외부 API·프록시는 금지(`code-gen.md` §3). 사외망에서는 설정이 비어 있는 것이 정상이라 `check_llm`이 SKIP으로 끝난다.
+1. **P3 S4 — 설정 화면.** `views/settings.py`. 기준정보 15종 CRUD와 재시드(`seed_masters(force=True)`가 이미 있다). 화면이 붙는 첫 슬라이스다. **P2 기반이 5/5로 닫혔다.**
 2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. **§10을 기다리는 동안 할 수 있는 일이다.**
 3. **P2 S1** — 기준정보 15표 선언. §9는 끝났고 §10만 남았다. `stage`를 파생 값으로 둘지가 모델 선언에 걸리므로 §10 뒤에 간다. 상세는 "P2 단계별 상세 — S1" 절.
 
@@ -80,7 +80,7 @@ flowchart LR
 - [x] S0 골격·설정 (Streamlit 앱이 뜬다) — `check_libs` `EXIT=0`, 앱이 8501에서 떠서 빈 홈이 보임
 - [x] S1 모델 (기준정보 15표 선언) — `import` 통과, 선언 표 15개, `hull` 12칸, CSV 헤더와 모델 칸 전부 일치
 - [x] S2 DB·시드 (15표 99행이 DB에 올라간다, `ensure_sn`) — `check_db` **EXIT=0**, 재실행해도 중복 적재되지 않음
-- [ ] S3 LLM (`modules/llm_client.py`)
+- [x] S3 LLM (`modules/llm_client.py`) — 창구만. 호출은 사내망 전환 지점(`SPEC.md` §11)
 
 ### P3. 화면
 
@@ -345,6 +345,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-12 | P2 S3 | `modules/llm_client.py` 신설 — 창구만. 호출은 `_chat()` 한 함수로 몰고 `SPEC.md` §11에 사내 게이트웨이 모양을 적었다(근거: `data_manager/llm_client.py`). `check_llm`이 창구 유무를 보도록 보완 | `parse_json` doctest 4건 통과 / `check_llm` EXIT=0 (설정 없음 SKIP + 창구 확인) / 설정 없이 부르면 `LLMNotConfigured` / 실제 코드에 `requests`·`verify=False`·`proxies`·외부 API 없음 / **진단 4개 전부 EXIT=0** | |
 | 2026-11-12 | P2 S2 | `modules/db.py`·`seed.py`·`sn_util.py` 신설. `app.py` 사이드바가 적재 행 수를 보이도록 수정 | `check_db` **EXIT=0** (15표 99행 일치) / 재실행 시 "이미 적재돼 있어 건너뜀" — 중복 적재 없음 / `--force` 재시드 99행 / **진단 4개 전부 EXIT=0** (처음) / `_check.py` EXIT=0 / 앱에서 "적재된 행 99행" 표시, 콘솔 오류 없음 / `data/meeting.db`는 `.gitignore`가 거름 | |
 
 ## 추가·변경 기록
