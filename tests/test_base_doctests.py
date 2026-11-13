@@ -20,6 +20,7 @@ import pytest
 MODULES = {
     "modules.extract": 10,
     "modules.sn_util": 2,
+    "modules.meetings": 2,  # shift_week 예제 2개 — 해를 넘는 ISO 주차
 }
 
 

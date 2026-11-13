@@ -136,7 +136,9 @@ def _tab_draft(block_id: str) -> None:
                   placeholder="회의에서 정해 주어야 하는 것",
                   on_change=_save_draft, args=(block_id,))
 
-    if st.button("초안 완료", key=f"ddone_{block_id}", icon=":material/task_alt:"):
+    # 「끝냈다」는 뜻에는 `check_circle` 하나를 쓴다 (디자인_규칙 2-4). 회의자료의 「완료 보고」와 같다.
+    # `done_all`(한꺼번에 바꾸기)은 「여러 건에 적용」이라 다른 뜻이라 그대로 둔다.
+    if st.button("초안 완료", key=f"ddone_{block_id}", icon=":material/check_circle:"):
         issues.save_draft(
             block_id,
             {f: st.session_state.get(f"{f}_{block_id}", "") for f in issues.DRAFT_FIELDS},

@@ -36,6 +36,7 @@ model: inherit
 | S5 | 이슈 원장 | `views/ledger.py`, `modules/issues.py` (F2 F3 F4 F23 F5) | S2 |
 | S6 | 기록함 | `views/inbox.py`, `modules/extract.py` (F1) | S3 S5 |
 | S7 | 회의자료 | `views/meeting.py`, `modules/meetings.py` (F6~F10 F12 F13 F20) | S5 |
+| S7-b | 지표 | `metric_def`·`metric_value`·`app_setting` + 지표 요약 장 (F16) | S7 |
 | S8 | 발행·PPTX | `modules/pptx_export.py` (F11) | S7 |
 | S9 | 지식·챗봇 | `views/knowledge.py`, `modules/knowledge.py` (F15) | S3 S5 |
 | S10 | 홈 | `views/home.py` (F19) | S5 S7 S9 |

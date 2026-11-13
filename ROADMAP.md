@@ -6,7 +6,7 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 60%** (26/43) ██████░░░░
+**전체 진행율 61%** (27/44) ██████░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
@@ -14,24 +14,21 @@
 | P0. 정본 정리 | 11/12 | 92% | █████████░ |
 | P1. 안전장치 (3일차 교육 적용) | 5/8 | 62% | ██████░░░░ |
 | P2. 기반 | 5/5 | 100% | ██████████ |
-| P3. 화면 | 4/8 | 50% | █████░░░░░ |
+| P3. 화면 | 5/9 | 56% | ██████░░░░ |
 | P4. 검증 | 1/7 | 14% | █░░░░░░░░░ |
 | P5. 사내망 고정본 | 0/3 | 0% | ░░░░░░░░░░ |
 <!-- progress:end -->
 
 ## 다음 할 일
 
-1. **P3 S7 — 회의자료. `/slice S7` 로 돈다.** `views/meeting.py`·`modules/meetings.py` (F6~F10 F12 F13 F20).
-   가장 큰 화면이고, **`/slice` 를 처음 쓰는 슬라이스**다 (code-gen → test-writer → spec-guard·code-reviewer·ui-reviewer).
-   **표현은 `report_item`, 사실은 `block`** 경계가 F8의 전제다. 표는 아직 선언하지 않았다.
-   **한 장 = `report_item` 하나**로 정했다 (2026-11-13 §2-D). `deck_slide`·`slide_object` 는 선언하지 않는다 —
-   1차 회의자료는 **틀을 고르고 값을 고치는** 화면이고, 자유 배치는 S8 의 `.pptx` 내보내기로 넘긴다.
-   장 순서는 **위·아래 버튼** (§2-E).
-2. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
+1. **P3 S8 — 발행·PPTX (F11).** `modules/pptx_export.py`. 「편집 가능한 PPT」가 여기서 나온다 —
+   1차 회의자료가 틀을 고르는 화면이라, 자유 배치는 파워포인트에서 고치는 것으로 푼다 (§2-D).
+   `meeting_version.snapshot_json` 이 판의 글을 이미 담고 있다 (S7).
+3. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
    S7 을 `/slice` 로 한 바퀴 돌려 본 뒤, 업무 규칙(종결 권한·상태 전이·`ensure_sn`·근거 없는 값 버리기)에
    테스트를 소급해서 붙일지 정한다.
-3. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. 언제든 할 수 있다.
-4. **쌓인 [제안]** — `ui-reviewer` 가 남긴 것들(사이드바 개발 진단, 이슈 등록 폼 중복,
+4. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. 언제든 할 수 있다.
+5. **쌓인 [제안]** — `ui-reviewer` 가 남긴 것들(사이드바 개발 진단, 이슈 등록 폼 중복,
    원장이 목록과 일괄 정리를 두 벌 보여 주는 것, 상세가 목록에서 먼 것 등). 그 화면을 손댈 때 함께 한다.
 
 > 2026-11-13 에 끝난 것: SD(디자인) 전부, `requirements.md` §2 결정 2건, 사건 당시 단계(§2-C), **테스트 수단**(pytest·`tests/`).
@@ -50,11 +47,11 @@
 
 | | 항목 |
 |---|---|
-| **문서** | `SPEC.md`(호선 4층·`stage` 어휘·검증 7규칙·§9-A 이름 고정·§10 일정·§11 LLM), `requirements.md`(기준정보 15표·운영 16표·F1~F23 배정·§2 **열려 있는 결정 없음**), `CLAUDE.md`, `docs/디자인_규칙.md`, `docs/_시안/` |
-| **코드** | `app.py`·`config/` 2, `modules/` 8종(`models`·`db`·`seed`·`sn_util`·`issues`·`extract`·`milestone`·`llm_client`), `views/` 5종(`settings`·`ledger`·`inbox`·`theme`·`ui`), `diagnostics/` 4종, `static/`(토큰·글꼴 서브셋), `data/samples/`(기준정보 CSV 15종 99행 + `mirror/`) |
+| **문서** | `SPEC.md`(호선 4층·`stage` 어휘·검증 7규칙·§9-A 이름 고정·§10 일정·§11 LLM), `requirements.md`(기준정보 15표·**운영 22표**·F1~F23 배정·§2 결정 A~L), `CLAUDE.md`, `docs/디자인_규칙.md`, `docs/_시안/` |
+| **코드** | `app.py`·`config/` 2, `modules/` 9종(`models`·`db`·`seed`·`sn_util`·`issues`·`extract`·`milestone`·`llm_client`·**`meetings`**), `views/` 6종(`settings`·`ledger`·`inbox`·**`meeting`**·`theme`·`ui`), `diagnostics/` 4종, `tests/`(바탕 2개 + **S7 슬라이스 시험**), `static/`(토큰·글꼴 서브셋), `data/samples/`(기준정보 CSV 15종 99행 + `mirror/`). **선언된 표 37개**(기준정보 15 + 운영 22) |
 | **장치** | `.gitignore`·권한 규칙·가드 훅(FAIL 0/26)·`roadmap.py`·`design_check.py`, `.claude/agents/` **6종**(`spec-writer`·`code-gen`·`test-writer`·`spec-guard`·`code-reviewer`·`ui-reviewer`), `.claude/skills/slice/` |
-| **없다** | `views/meeting.py`·`knowledge.py`·`home.py`, `modules/meetings.py`·`knowledge.py`·`pptx_export.py` — S7 이후. **`tests/` 도 아직 없다**(P4). 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(강등 경로를 쓴다) |
-| **깃** | `main` = `origin/main` = `7989efa`. 2026-11-13 커밋 4개(`d059387` 컴포넌트 토큰 · `adf6d2a` 재점검 반려 5건 · `6b068be` 미결 A·B · `7989efa` 사건 당시 단계) |
+| **없다** | `views/knowledge.py`·`home.py`, `modules/knowledge.py`·`pptx_export.py` — S8 이후. **S0~S6 의 슬라이스 테스트**(S7 만 있다, P4). 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(강등 경로를 쓴다) |
+| **깃** | `main` = `origin/main` = **`f199936`**. 2026-11-13 커밋 8개 — `d059387` 컴포넌트 토큰 · `adf6d2a` 재점검 반려 5건 · `6b068be` 미결 A·B · `7989efa` 사건 당시 단계 · `a6c9433` 에이전트 묶음 · `fcb077b` 로드맵 대조 · `935bc3e` 테스트 수단 · `f199936` v2e-studio 2차로. **S7 은 아직 커밋 전** |
 
 ## 흐름
 
@@ -104,7 +101,8 @@ flowchart LR
 - [x] S4 설정 화면 — 기준정보 15종 CRUD·재시드 (`views/settings.py`, `app.py` 화면 분기)
 - [x] S5 이슈 원장 — F2 그리드·F3 지식 매핑·F4 주차별 진행·F5 1차 초안(사진 포함)·F21 일정 경보·F23 일괄 정리
 - [x] S6 기록함 — F1. 메모 원본 보존, 근거 없는 AI 값은 코드가 버림, 사외망에서는 직접 적기로 강등
-- [ ] S7 회의자료 — F6~F10 F12 F13 F20
+- [x] S7 회의자료 — F6 장 구성(추가·빼기·위·아래 버튼·형태 전환)·F7 요약·F8 사실 되먹임(**1차로 확정**, §2-F)·F9 부서 제출(판 고정)·F10 취합(**최신 제출판 참조**, 공유회만)·F12 진행(결정하면 `decision_needed` 비움)·F13 종결 승인·보류·F20 지시사항(**낸 주차부터**). **기간 표는 2차.** `/slice` 를 처음 쓴 슬라이스 — 검토 **세 바퀴**에서 버그 10건·규칙 위반 7건·문서 어긋남 11건이 나왔고 전부 처리했다 (아래 "S7 에서 배운 것")
+- [ ] **S7-b 지표** — `metric_def`·`metric_value`·`app_setting` + 「지표 요약」 장 (F16). S7 에서 **떼어 냈다** (2026-11-13, §2) — 표 3종에 입력 화면과 「평소 범위 = 최근 n주 평균 ±2σ」 계산이 딸려 와 그 자체로 한 슬라이스다
 - [ ] S8 발행·PPTX — F11
 - [ ] S9 지식·챗봇 — F15
 - [ ] S10 홈 — F19, **마지막** (앞 슬라이스가 다 있어야 숫자를 센다)
@@ -443,6 +441,28 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
 **언제 하나** — 위 [제안]은 그 화면을 손댈 때 함께 한다.
 
+## S7 에서 배운 것 · 2차로 미룬 것
+
+`/slice` 를 처음 돌린 슬라이스다. **검토 세 바퀴**를 돌았고, 나온 것의 성격이 셋으로 갈렸다.
+
+| 갈래 | 몇 건 | 무엇이었나 |
+|---|---|---|
+| **코드가 자기 약속을 안 지킴** | 10 | 화면은 막는데 **모듈 함수가 안 막았다** — 종결 권한·빈 결정 글·빈 보고·안건 밖 이슈·취합 갈래. 참조가 **살아 있는 행**을 보다가 공유회 화면이 통째로 안 열린 크래시도 여기 |
+| **규칙 위반** | 7 | 날 `st.pills`, 의미 색 오용, 화면마다 다른 「완료」 아이콘, 화면 글에 슬라이스 번호 |
+| **문서끼리 어긋남** | 11 | 전부 **원본 `docs/03`·`docs/07` 에는 있는데 정본에 안 옮겨진 자리**. 결정 D~L 아홉 건이 여기서 나왔다 |
+
+> **코드를 만들지 않았으면 셋 다 안 드러났다.** 특히 문서 쪽 11건은 S8·S10 에서야 터졌을 것들이다.
+> 검토자를 세 종류(명세·코드·화면) 두고 **서로 다른 것을 보게** 한 것이 값을 했다 — 같은 자리를 셋이 다르게 짚었다.
+
+**2차로 미룬 것** (검토가 「1차를 막지는 않는다」고 가른 것들)
+
+- **판 조회 성능** — 참조 장마다 부서 자료의 모든 판 JSON 을 최신부터 판다. 장 수 × 판 수로 는다. 판 200개로 재니 `items()` 가 **2ms** 라 1차 규모에서는 문제없다
+- **다중 판 회귀 시험** — 장이 옛 판에만 있는 경우를 고정하는 시험
+- **화면 다듬기** — 「빠진 장」 문장과 칩, 「2차」라는 말이 화면에 남은 자리, 취합·추가 아이콘, 군말 캡션
+- **문서에 없는 화면 동작** — `ensure_regular()`(정기 회의 10건 자동 생성)와 「수시 회의 만들기」가 `requirements.md` 에 없다. 근거가 시안뿐이라 F6 밑에 한 줄 적어야 한다
+- **`snapshot_json` 의 사실 4키**가 단건 장에만 들어간다 — S8 이 요약 장에서 찾으면 없다. §1-2-2 비고에 조건 한 마디
+- **`report_item.src` 의 2차 몫** — 원본의 출처 구분(「원장 채움」·「종결 요청 자동 채택」)이 오면 자리를 새로 정한다 (§2-J, 열어 둠)
+
 ## 뚫어 보기 기록 (P1)
 
 교재 70쪽 방식. 하나씩 시켜 보고 막혔는지·무엇이 막았는지 적는다. 뚫리면 `guard-test.js`에 그 경우를 한 줄 추가하고 `guard.js`를 고쳐 FAIL 0을 다시 만든다.
@@ -479,6 +499,9 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-13 | P4 | **테스트 수단 갖춤** — `pyproject.toml` 에 dev 묶음(pytest)·pytest 설정, `tests/`(README·`test_base_imports.py`·`test_base_doctests.py`). 명령을 `uv run python -X utf8 -m pytest` 로 정하고 `test-writer`·`code-reviewer` 의 명령도 맞췄다 | 19개 통과 / **일부러 예제를 틀리게 해서 실제로 반려되는 것까지 확인**(exit 1, 실패 줄의 한글 이름도 읽힘) / 예제가 0개인 모듈은 목록에서 빼 헛통과를 막음 | |
 | 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 |`a6c9433` |
 | 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 |`7989efa` |
+| 2026-11-13 | P3 S7 | **S7 어긋남 3건 수정**(`spec-guard` 2차) — 저장 값을 **원본 `docs/03` 어휘**로 (`meeting.status` 「구성 중」/제출, `directive.status` 「열림」, `start_mode` `carry`/`blank` + 화면 라벨은 `START_MODE_LABELS` 한 군데), 취합은 **공유회에만**(팀장 정보회의의 「공유회에서 가져오기」는 2차), `report_item.src` 는 「참조한 제출판 장의 `id`」(원본의 출처 구분은 2차에 자리를 새로 정한다), 머리 줄에 F8 추가, `collect()` 독스트링을 두 경우로 갈라 적음 | `check_db` EXIT=0(37표·99행) / `design_check` 0건 / `pytest` 72 passed **4 failed** — 바뀐 값을 기다리는 테스트 3자리(`"이어받기"`·`"대기"`·`"초안"`)라 `test-writer` 가 맞춘다 | |
+| 2026-11-13 | P3 S7 | **회의자료 마무리** — 검토 **세 바퀴**(`spec-guard`·`code-reviewer`·`ui-reviewer` × 3)에서 나온 버그 10·규칙 위반 7·문서 어긋남 11건을 전부 처리. 결정 D~L **아홉 건**이 이 과정에서 나왔다. 마지막 바퀴: 요약 장으로만 실린 종결요청도 승인되게(`_block_ids_on` 이 판의 「이슈」까지 센다), `report_item.src` FK 떼기(판을 가리키므로 행이 없어도 된다), `collect()` 를 모듈에서 막기(취합은 공유회만), `closure.decision` 주석 | `pytest` **전부 통과** / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / `guard-test` FAIL 0 / FK 를 켠 임시 DB 에서 장 빼기·요약 승인·exec 취합 거부 직접 확인 / 앱에서 회의 목록·공유회 참조 장 눈으로 확인 | |
+| 2026-11-13 | P3 S7 | **회의자료** — 운영 표 6종 선언(`meeting`·`meeting_version`·`report_item`·`report_item_block`·`meeting_comment`·`directive`, 원본 `docs/03` 칸 그대로), `modules/meetings.py`, `views/meeting.py`, `app.py` 분기 1줄, `theme.MEANING` 에 회의 상태 9개. F6 장 구성(위·아래 버튼·형태 4종·빼기 되돌리기·이어받기)·F7 요약·F9 제출(판 고정)·F10 취합(`src` 참조)·F12 진행(결정하면 `decision_needed` 비움)·F13 승인·보류·F20 지시사항. **F8(사실 되먹임)은 1차로 확정**(§2-F) — 만들 때는 2차로 알고 시작했는데 `spec-guard` 가 원본과 어긋난 것을 찾아 그날 문서를 고쳤다. **기간 표(`kind=table`)는 2차** | `check_db` EXIT=0(37표·99행) / `check_data` EXIT=0 / `_check.py` EXIT=0 / `design_check` 0건 / `pytest` 19 passed / `AppTest` 로 목록·부서 자료·공유회 한 바퀴(제출→취합→결정→승인→지시→완료 보고) 예외 0 | |
 | 2026-11-13 | P0 | **미결 A·B 닫음** — 회의자료는 `meeting` 하나로, `hull.stage` 는 볼 때마다 계산. `requirements.md` §2 에 열려 있는 결정이 없어져 S7 이 열렸다 | 13척 중 12척이 DB 값과 일치, SN2512 만 날짜 때문에 다름(의도한 결과) |`6b068be` |
 | 2026-11-13 | SD 6차 | `ui-reviewer` 2차 반려 5건 수정 — 여는 버튼에 「열기」 글자(`[9,2]`), 이슈 등록 아이콘 `add` 통일, 설정 삭제 **되돌리기**(위젯 판 번호로 재삭제 막음), 기록함이 새 메모를 열도록 목록 선택도 옮김·자동 선택 끔, 카드 글 `html.escape`(`ui.card()` 신설), `st.toast` 아이콘 글꼴(`stToastDynamicIcon`) | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 앱에서 5건 모두 확인 — 「열기」 버튼, `+ 이슈로 등록`, 지우고 되돌려 99행 복구, 새 메모가 열리고 목록 맨 위에 파란 막대, `<점검>` 이 글자 그대로 보임 |`adf6d2a` |
 | 2026-11-13 | SD 5차 | 컴포넌트 토큰 4건을 맞췄다 — `views/ui.py` 신설(`card_list`·`filter_pills`·`search_box`·`check_list`), 원장·기록함 목록을 카드로, 거르기를 칩+찾기로, 일괄을 체크 칸으로, 저장을 자동 저장으로, 주 버튼을 화면당 하나로. 상태 지표 5개 제거, 탭·화면의 기능 번호 제거, 후보 중복 등록 막음 | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 화면 4개 임포트 통과 / 앱에서 카드 목록·파란 막대·칩 메타·건수 칩 확인 |`d059387` |
@@ -507,6 +530,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | **`config/settings.py`의 비밀값 읽기 시점 수정** | 처음에는 `st.secrets` 속성 접근을 `try`로 감쌌는데, Streamlit은 접근이 아니라 **읽는 시점**에 `StreamlitSecretNotFoundError`를 던진다. 그래서 `secrets.has()` 호출이 그대로 터졌다. `st.secrets.get(...)` 호출 자체를 감싸도록 고쳤다 — 사외망에서 `secrets.toml`이 없는 것이 정상 상태이므로 터지지 않고 기본값을 줘야 한다 |
 | 2026-11-13 | **디자인 묶음이 `ROADMAP.md`를 덮어썼다 — 커밋본에서 되살려 합쳤다** | 묶음의 `ROADMAP.md`(85줄)가 교육장 원본 골격이라, 이 저장소에서 쌓은 374줄(실적 로그·변경 기록·§9·§10·P2 상세·SD·뚫어 보기)과 **S-1~S6 완료 표시**가 통째로 날아갔다. `d55037f` 에서 복원하고 묶음에만 있던 디자인 항목(P0 2개·P4 1개)을 옮겨 붙였다. **첫날 경고한 그대로였다** — 다음에 묶음을 받을 때도 `ROADMAP.md`는 빼고 받는다 |
 | 2026-11-13 | **에이전트 묶음이 `ROADMAP.md`를 또 덮었다 (세 번째) — `HEAD` 에서 되살렸다** | 묶음의 `ROADMAP.md`(89줄·20%)는 **11-12 교육장 판**이라 S-1~S6·SD·§2 결정·실적 로그 499줄이 통째로 날아갔다. `git show HEAD:ROADMAP.md`(`7989efa`)로 되살리고, 묶음에만 있던 항목(P1 2개·P4 2개)을 손으로 더했다. **쪽지로는 세 번 다 못 막았다.** 앞으로는 ① 푸는 쪽에서 `ROADMAP.md` 를 빼고 ② 그래도 덮였으면 **먼저 `git show HEAD:ROADMAP.md > ROADMAP.md` 로 되살린 뒤** 묶음 판에만 있는 줄을 옮겨 붙인다. 묶음 판을 손보는 쪽은 잃는 것이 훨씬 많다 |
+| 2026-11-13 | **S7 에서 문서끼리 어긋난 것 4건을 정했다** (`requirements.md` §2) | `spec-guard` 가 S7 검사에서 찾았다. ① **F8(사실 되먹임)은 1차** — 원본 `docs/03` 이 「사실은 block 에, 고치면 이슈에 바로 반영」이라 적었는데 `requirements.md` 가 2차라고 적어 둬 코드와 어긋났다. 문서를 고쳤다 ② **F16(지표)은 S7 이 아니라 S7-b** — 표 3종·입력 화면·±2σ 계산이 딸려 와 한 슬라이스다 ③ **F10 취합은 최신 제출판**을 가리킨다 — 표현은 판 그대로 굳고 사실만 지금 값을 따른다 ④ **F20 지시는 낸 주차부터**(열림 + 이번 주 완료) — 정본의 「다음 주」를 원본 `docs/03` 쪽으로 고쳤다. 그 주에 공유회가 또 열리면 바로 보여야 한다 |
 | 2026-11-13 | **테스트 명령은 `uv run python -X utf8 -m pytest`** | 맨 `uv run pytest` 는 Windows 콘솔(cp949)에서 **한글 시험 이름을 깨뜨린다** — `code-reviewer` 가 읽어야 하는 실패 줄이 `test_����Ʈ��_…` 로 나온다. `tests/conftest.py` 에서 출력 인코딩을 바꿔 봤지만 pytest 가 더 먼저 출력을 잡아 소용없었다. `CLAUDE.md` §5 의 다른 명령과 같은 방식으로 맞췄고, 두 에이전트 파일의 명령도 고쳤다 |
 | 2026-11-13 | **`roadmap.py check` 가 헛경고를 내던 것을 고쳤다** | `changed_files()` 가 `git status --porcelain` 줄을 **자리로**(`line[3:]`) 잘랐는데, `git_out` 이 출력 앞뒤 공백을 떼는 바람에 첫 줄이 ` M ROADMAP.md` 면 한 칸 밀려 `OADMAP.md` 가 됐다. 그래서 ROADMAP.md 를 고쳐 놓고도 종료할 때마다 "갱신되지 않았다" 가 떴다. 한 번만 쪼개 이름을 얻도록 바꿨다 |
 | 2026-11-13 | **에이전트가 3종 → 6종, `/slice` 스킬 신설** | 2026-11-13 묶음. `test-writer`(슬라이스 테스트)·`code-reviewer`(diff·테스트 검토)가 들어와 **테스트와 코드 리뷰 공백**이 메워졌다. `code-gen` 은 이제 테스트를 직접 쓰지 않는다. `/slice` 가 code-gen → test-writer → (spec-guard·code-reviewer·ui-reviewer 동시) → 반려 2회까지 수정 순서를 묶는다. S0~S6 은 이 장치 없이 만들어져 **테스트가 없다**(P4) |

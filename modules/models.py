@@ -5,11 +5,11 @@
 표 이름·칸 이름·칸 순서를 바꾸지 않는다 — 사내망 전환 때 헤더 값만 매칭한다.
 
 **여기에 없는 것**
-- 회의·지식 표(`meeting`·`report_item`·`case_card` 등)는 S7·S9 에서 만든다
+- 지식 표(`case_card`·`block_link`)는 S9 에서 만든다
 - 사내 미러 표 `milestone` 은 기준정보가 아니다. S2 또는 S4 에서 넣는다
   (`requirements.md` §1-4). `hull.stage` 는 그 표에서 **계산되는** 파생 값이다
 
-아래 **운영 표**(S5 이슈 원장)는 `requirements.md` §1-2-2 를 따른다.
+아래 **운영 표**(S5 이슈 원장 · S7 회의자료)는 `requirements.md` §1-2-2 를 따른다.
 표 이름·칸 이름은 원본 `docs/03_데이터모델.md` 그대로다.
 
 아래 클래스 순서는 **시드 FK 순서**와 같다 (`code-gen.md` §4②).
@@ -365,7 +365,10 @@ class Closure(Base):
     action_text: Mapped[str] = mapped_column(Text)
     requested_by: Mapped[str | None] = mapped_column(ForeignKey("person.id"))
     requested_week_id: Mapped[str | None] = mapped_column(ForeignKey("week.id"))
-    decision: Mapped[str | None] = mapped_column(String(8))  # 승인 / 보류 / 대기
+    # 저장되는 값은 **「승인」·「보류」 둘뿐**이다 (`meetings.DECISIONS`).
+    # 「대기」는 저장 값이 아니라 **결정이 아직 없을 때(`None`) 화면에 보이는 말**이고,
+    # `meetings.closure_pending()` 의 「결정」 칸이 그 말을 넣는다 (칩 색은 `views/theme.py`).
+    decision: Mapped[str | None] = mapped_column(String(8))  # 승인 / 보류
     decided_week_id: Mapped[str | None] = mapped_column(ForeignKey("week.id"))
     decided_at: Mapped[datetime.datetime | None] = mapped_column(DateTime)
 
@@ -456,3 +459,154 @@ class Marker(Base):
     y: Mapped[float | None] = mapped_column(Float)
     label: Mapped[str | None] = mapped_column(String(64))
     component_id: Mapped[str | None] = mapped_column(ForeignKey("component.id"))
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 운영 표 — S7 회의자료 (`requirements.md` §1-2-2 「회의」)
+#
+# **표현은 `report_item`, 사실은 `block` 이다.** 회의자료에서 현상·원인·조치·결정 필요를
+# 고치면 `block` 을 고치는 것이고, 회의용 한 줄·형태·순서·머리표는 `report_item` 에만 있다.
+# 이 경계가 F8(사실 되먹임)의 전제다.
+#
+# **`deck_slide`·`slide_object` 는 선언하지 않는다** (2026-11-13 결정 D,
+# `requirements.md` §1-2-3). 회의자료의 한 장은 `report_item` 하나다.
+# ══════════════════════════════════════════════════════════════════════════
+
+
+class Meeting(Base):
+    """회의 한 건. 부서 자료는 「제출」, 나머지는 「발행」이다.
+
+    정기 회의(부서 자료 8건 + 공유회 + 팀장 정보회의)는 주차마다 저절로 생긴다 —
+    `modules/meetings.py` 의 `ensure_regular()`.
+    """
+
+    __tablename__ = "meeting"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # MTG-2026-W46-dept-D2
+    week_id: Mapped[str] = mapped_column(ForeignKey("week.id"))
+    # `held_on` 이 회의 날짜고, `held_at` 은 진행을 시작한 시각이다 (진행 화면이 적는다)
+    held_at: Mapped[datetime.datetime | None] = mapped_column(DateTime)
+    chair_id: Mapped[str | None] = mapped_column(ForeignKey("person.id"))
+    kind: Mapped[str] = mapped_column(String(8))  # dept / share / exec / hull / review
+    title: Mapped[str] = mapped_column(String(200))
+    owner_dept_id: Mapped[str | None] = mapped_column(ForeignKey("department.id"))
+    held_on: Mapped[datetime.date | None] = mapped_column(Date)
+    # 어휘는 **원본 `docs/03` 것을 그대로 쓴다** — 사내망 실데이터와 값을 맞추기 위해서다
+    # (2026-11-13 결정). 1차에서 코드가 넣는 값은 「구성 중」·「제출」 둘이고, 「수정됨」·
+    # 「발행」은 S8(발행·PPTX) 몫, 「종료」는 회의가 끝난 뒤라 어휘에만 둔다.
+    status: Mapped[str] = mapped_column(String(8))  # 구성 중 / 제출 / 수정됨 / 발행 / 종료
+    # 저장 값은 **영문 코드**다 (원본 `docs/03`). 화면에 보이는 말 「이어받기」·「빈 자료」는
+    # `modules/meetings.py` 의 `START_MODE_LABELS` 한 군데에서만 갈린다.
+    start_mode: Mapped[str | None] = mapped_column(String(16))  # carry / blank
+    version: Mapped[int] = mapped_column(Integer)  # 0 = 아직 판이 없다
+    hull_id: Mapped[str | None] = mapped_column(ForeignKey("hull.id"))  # 호선별 회의
+    # 원본 `docs/03` 의 칸 — **공유회 부서 순서**(부서 ID 목록 JSON)다. 장 순서가 아니다
+    # (장 순서의 정본은 `report_item.order_no` 하나다). **1차에서는 쓰지 않는다** —
+    # 1차 공유회는 제출판을 취합한 순서대로 본다.
+    order_json: Mapped[str | None] = mapped_column(Text)
+
+
+class MeetingVersion(Base):
+    """판 고정. **회의에서 본 그대로 남는다** — 뒤에 사실이 바뀌어도 이 글은 안 바뀐다."""
+
+    __tablename__ = "meeting_version"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    meeting_id: Mapped[str] = mapped_column(ForeignKey("meeting.id"))
+    version: Mapped[int] = mapped_column(Integer)
+    published_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    snapshot_json: Mapped[str | None] = mapped_column(Text)
+
+
+class ReportItem(Base):
+    """**회의자료의 한 장.**
+
+    `kind` 는 `single`(이슈 한 건) · `summary`(여러 이슈를 한 장으로, F7) ·
+    `metric`(지표 요약) · `table`(기간 표). **`table` 은 2차다** —
+    기간 표(`metric_table`)가 1차에 없다 (`requirements.md` §1-2-3).
+
+    **`src` 는 「참조한 제출판 장의 `id`」다** (2026-11-13 결정). F10 취합에서 공유회가
+    부서 **최신 제출판**의 장을 실을 때 글을 베끼지 않고 그 판에 적힌 장 `id` 를 가리킨다 —
+    표현(한 줄·형태·머리표)은 판 그대로 굳고, 사실(현상·원인·조치)만 `block` 에서 지금
+    값을 읽는다. 읽는 곳은 `modules/meetings.py` 의 `_src_ref()` 하나다.
+
+    원본 `docs/03` 은 같은 칸을 **출처 구분**으로 적어 두었다 — 공유회가 직접 가진 장이
+    「종결 요청 자동 채택」인지 「원장 채움」인지. **그 기능은 2차다.** 2차에 오면 출처
+    구분을 둘 자리를 새로 정해야 한다 — 한 칸에 두 뜻(참조한 장 `id` · 출처 이름)을
+    섞어 담지 않는다.
+    """
+
+    __tablename__ = "report_item"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    meeting_id: Mapped[str] = mapped_column(ForeignKey("meeting.id"))
+    kind: Mapped[str] = mapped_column(String(8))  # single / summary / metric / table
+    block_id: Mapped[str | None] = mapped_column(ForeignKey("block.id"))
+    line: Mapped[str | None] = mapped_column(Text)  # 회의용 한 줄
+    tag_on: Mapped[bool | None] = mapped_column(Boolean)  # 머리표를 보이나
+    form: Mapped[str | None] = mapped_column(String(8))  # detail / card / photo / line
+    order_no: Mapped[int | None] = mapped_column(Integer)
+    # **FK 를 걸지 않는다.** 가리키는 것은 살아 있는 행이 아니라 **제출판에 굳은 장의
+    # `ID`** 다 — 부서가 그 장을 빼면 `report_item` 행은 지워지지만 판에서는 빠지지
+    # 않고, 공유회는 그 판의 글을 계속 보인다 (`meetings._src_ref`). FK 를 걸면 그
+    # 빼기가 막힌다 (FOREIGN KEY constraint failed). 선례는 `table_id` 와
+    # `Alias.target_id` 다 — 칸 이름은 그대로 두고 이을 곳만 코드가 안다.
+    src: Mapped[str | None] = mapped_column(String(32))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    dept_id: Mapped[str | None] = mapped_column(ForeignKey("department.id"))
+    # 원본 `docs/03` 의 「기간 표」 칸이다 — 가리키는 것은 **기간 표(`metric_table`)** 고,
+    # 이슈에 붙인 표(`block_table`)가 아니다. 그 표는 **2차**라 1차에 없으므로
+    # (`requirements.md` §1-2-3) 칸 이름만 그대로 두고 FK 는 걸지 않는다.
+    # 2차에 `metric_table` 이 오면 그때 FK 를 건다.
+    table_id: Mapped[str | None] = mapped_column(String(32))
+
+
+class ReportItemBlock(Base):
+    """요약 장이 잇는 이슈들 (F7). **요약해도 이슈는 그대로 남는다.**"""
+
+    __tablename__ = "report_item_block"
+
+    item_id: Mapped[str] = mapped_column(ForeignKey("report_item.id"), primary_key=True)
+    block_id: Mapped[str] = mapped_column(ForeignKey("block.id"), primary_key=True)
+    order_no: Mapped[int | None] = mapped_column(Integer)
+
+
+class MeetingComment(Base):
+    """회의 진행 기록 (F12).
+
+    `kind="decision"` 이면 **그 이슈의 `decision_needed` 를 비운다** — 정해진 것을
+    「결정 필요」로 남겨 두면 다음 주에 같은 안건이 또 올라온다.
+    """
+
+    __tablename__ = "meeting_comment"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    meeting_id: Mapped[str] = mapped_column(ForeignKey("meeting.id"))
+    block_id: Mapped[str | None] = mapped_column(ForeignKey("block.id"))
+    text: Mapped[str] = mapped_column(Text)
+    author_id: Mapped[str | None] = mapped_column(ForeignKey("person.id"))
+    kind: Mapped[str] = mapped_column(String(8))  # comment / decision
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+
+
+class Directive(Base):
+    """지시사항 (F20) — 내용·담당 부서·기한(주차).
+
+    **낸 주차부터** 그 부서 회의자료 **맨 위**에 나오고, **한 줄 보고로 완료**된다
+    (2026-11-13 결정 — 그 주 안에 공유회가 열리면 그 주 자료에 바로 올라와야 한다).
+    """
+
+    __tablename__ = "directive"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    meeting_id: Mapped[str] = mapped_column(ForeignKey("meeting.id"))
+    block_id: Mapped[str | None] = mapped_column(ForeignKey("block.id"))
+    dept_id: Mapped[str] = mapped_column(ForeignKey("department.id"))
+    text: Mapped[str] = mapped_column(Text)
+    due_week_id: Mapped[str | None] = mapped_column(ForeignKey("week.id"))
+    # 어휘는 **원본 `docs/03` 것을 그대로 쓴다** — 사내망 실데이터와 값을 맞추기 위해서다
+    # (2026-11-13 결정). `requirements.md` §1-2-2·결정 I 도 「열림 + 이번 주 완료」로 적는다
+    status: Mapped[str] = mapped_column(String(8))  # 열림 / 완료
+    done_note: Mapped[str | None] = mapped_column(Text)
+    done_week_id: Mapped[str | None] = mapped_column(ForeignKey("week.id"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
