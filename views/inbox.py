@@ -118,11 +118,12 @@ def render() -> None:
     if not is_configured():
         col2.info("LLM 설정이 없어 **직접 적기**로 간다. 설정을 안 채운 상태에서는 정상이다.",
                   icon=":material/edit_note:")
-    elif llm_client.provider() == llm_client.CLAUDE:
+    elif llm_client.provider() in llm_client.EXTERNAL:
         # 공개 데모 전용 갈래다 (CLAUDE.md §3·§6-9 의 예외). 글이 **밖으로 나간다**는 것을
         # 쓰는 사람이 알아야 한다 — 이 경고가 그 예외를 떠받치는 가드레일이다.
         col2.warning(
-            "**외부 LLM(Claude)** 으로 정리합니다. 붙여넣은 글이 회사 밖으로 나갑니다 — "
+            f"**외부 LLM({llm_client.provider()})** 으로 정리합니다. "
+            "붙여넣은 글이 회사 밖으로 나갑니다 — "
             "**실제 회사 메모를 넣지 마십시오.** 데모용 가상 메모만 씁니다.",
             icon=":material/public:",
         )

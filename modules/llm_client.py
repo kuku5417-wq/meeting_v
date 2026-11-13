@@ -30,12 +30,14 @@ from config.settings import secrets
 
 # 설정 키 — `.streamlit/secrets.toml` (template 참조). diagnostics/check_llm.py 와 같아야 한다.
 INHOUSE_NEEDED = ("llm_base_url", "llm_model")
-CLAUDE_NEEDED = ("llm_api_key",)
+EXTERNAL_NEEDED = ("llm_api_key",)
+CLAUDE_NEEDED = EXTERNAL_NEEDED  # 옛 이름
 NEEDED = INHOUSE_NEEDED  # 옛 이름 — 사내 갈래를 가리킨다
 
 PROVIDER_KEY = "llm_provider"
-INHOUSE, CLAUDE = "inhouse", "claude"
-DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"
+INHOUSE, CLAUDE, OPENAI = "inhouse", "claude", "openai"
+EXTERNAL = (CLAUDE, OPENAI)  # 공개 데모 전용 갈래들
+DEFAULT_MODEL = {CLAUDE: "claude-sonnet-5-5", OPENAI: "gpt-4o-mini"}
 
 DEFAULT_SYSTEM = "너는 조선소 커미셔닝 현장의 기록을 정리한다. JSON 형식으로만 답한다."
 
@@ -59,13 +61,18 @@ class LLMFailed(RuntimeError):
 def provider() -> str:
     """지금 쓰는 갈래. 비어 있으면 **사내**다 — 기본값이 바뀌지 않게 한다."""
     name = str(secrets.get(PROVIDER_KEY, "") or "").strip().lower()
-    return CLAUDE if name == CLAUDE else INHOUSE
+    return name if name in EXTERNAL else INHOUSE
 
 
 def is_configured() -> bool:
     """설정이 채워져 있는가. **값 자체는 보지 않는다** — 있는지만 본다."""
-    needed = CLAUDE_NEEDED if provider() == CLAUDE else INHOUSE_NEEDED
+    needed = EXTERNAL_NEEDED if provider() in EXTERNAL else INHOUSE_NEEDED
     return all(secrets.has(k) for k in needed)
+
+
+def _model() -> str:
+    """쓸 모델 이름. 설정이 비면 갈래의 기본값."""
+    return str(secrets.get("llm_model") or DEFAULT_MODEL.get(provider(), ""))
 
 
 def parse_json(content: str) -> dict[str, Any] | None:
@@ -114,7 +121,7 @@ def _chat(system: str, user_prompt: str, temperature: float) -> str:
     """
     which = provider()
     if not is_configured():
-        needed = CLAUDE_NEEDED if which == CLAUDE else INHOUSE_NEEDED
+        needed = EXTERNAL_NEEDED if which in EXTERNAL else INHOUSE_NEEDED
         raise LLMNotConfigured(
             f"LLM 설정이 없다 ({which}: " + ", ".join(needed) + "). "
             "설정이 없는 것은 **정상**이다 — 화면은 「직접 적기」로 간다. "
@@ -122,6 +129,8 @@ def _chat(system: str, user_prompt: str, temperature: float) -> str:
         )
     if which == CLAUDE:
         return _chat_claude(system, user_prompt, temperature)
+    if which == OPENAI:
+        return _chat_openai(system, user_prompt, temperature)
     raise NotImplementedError(
         "사내망 고정본에서 구현한다 — SPEC.md §11 참조. "
         "OpenAI 호환 /chat/completions, Bearer 인증, max_tokens 미전송."
@@ -148,7 +157,7 @@ def _chat_claude(system: str, user_prompt: str, temperature: float) -> str:
     client = anthropic.Anthropic(api_key=secrets.get("llm_api_key"))
     try:
         answer = client.messages.create(
-            model=str(secrets.get("llm_model") or DEFAULT_CLAUDE_MODEL),
+            model=_model(),
             max_tokens=4000,
             system=system,
             messages=[{"role": "user", "content": user_prompt}],
@@ -158,3 +167,33 @@ def _chat_claude(system: str, user_prompt: str, temperature: float) -> str:
         raise LLMFailed(f"Claude 를 부르지 못했다 — {type(e).__name__}") from e
     # 글 조각만 잇는다. 생각 블록이 섞여 와도 `parse_json()` 이 벗긴다.
     return "".join(b.text for b in answer.content if getattr(b, "type", "") == "text")
+
+
+def _chat_openai(system: str, user_prompt: str, temperature: float) -> str:
+    """OpenAI API — **공개 데모 전용 갈래**. 사내망에서는 쓰지 않는다.
+
+    모양이 `SPEC.md` §11 의 사내 게이트웨이(OpenAI 호환 `/chat/completions`)와 같다.
+    그렇다고 이 함수를 사내망에 쓰지는 않는다 — 주소와 인증이 다르고, 사내 갈래는 P5 에서 따로 채운다.
+    """
+    try:
+        import openai
+    except ImportError as e:  # 선택 의존성
+        raise LLMNotConfigured(
+            "`openai` 가 깔려 있지 않다. `uv sync --extra demo` 또는 "
+            "`python -m pip install -r requirements.txt` 로 깐다."
+        ) from e
+
+    client = openai.OpenAI(api_key=secrets.get("llm_api_key"))
+    try:
+        answer = client.chat.completions.create(
+            model=_model(),
+            temperature=temperature,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except openai.OpenAIError as e:
+        # 키가 틀리거나 연결이 안 되거나 한도에 걸린 경우. **키 값은 적지 않는다.**
+        raise LLMFailed(f"OpenAI 를 부르지 못했다 — {type(e).__name__}") from e
+    return answer.choices[0].message.content or ""

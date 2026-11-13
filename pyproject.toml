@@ -24,6 +24,7 @@ ui = [
 # (`CLAUDE.md` §3·§6-9 의 예외, `modules/llm_client.py` 머리글).
 demo = [
     "anthropic>=0.40",
+    "openai>=1.50",
 ]
 
 # 개발용 — 앱이 도는 데는 필요 없다. 그래서 `dependencies` 와 `check_libs.py` 의 REQUIRED 에
