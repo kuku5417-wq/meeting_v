@@ -24,8 +24,12 @@
 1. **S8 검토 — 발표 뒤 바로.** 만들기는 끝났는데 **`test-writer`·검토 셋을 건너뛰고 올렸다**
    (2026-11-13 3시 발표 때문에). S7 이 세 바퀴에서 버그 10건을 뱉은 것을 생각하면
    **S8 에도 있을 가능성이 높다.** `/slice` 의 뒷부분만 돌리면 된다.
+   같은 커밋에 섞여 든 **데모 LLM 갈래(`llm_client` openai·claude)도 함께 본다** — 그쪽도
+   `test-writer`·검토를 안 거쳤고, LLM 이 앱의 기능으로 확정됐다(2026-11-13).
 2. **S7-b 지표 (F16)** · **S9 지식·챗봇 (F15)** · **S10 홈 (F19)** — 남은 슬라이스.
-   S9 는 사외망에서 챗봇을 끝까지 확인할 수 없다는 것부터 정해야 한다.
+   **S9 의 전제가 닫혔다 (2026-11-13)** — 「이 앱은 LLM 이 되어야 한다」는 결정으로
+   **「질문하기」가 1차 필수**가 됐다. 데모 갈래로 실제 호출까지 확인하고, 키가 없는 자리에서는
+   찾기로 강등한다. `CLAUDE.md` §3·§6-9 의 공개 데모 예외를 **지식창고까지 넓혀 적어야 한다.**
 3. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
    S7 을 `/slice` 로 한 바퀴 돌려 본 뒤, 업무 규칙(종결 권한·상태 전이·`ensure_sn`·근거 없는 값 버리기)에
    테스트를 소급해서 붙일지 정한다.
@@ -52,8 +56,8 @@
 | **문서** | `SPEC.md`(호선 4층·`stage` 어휘·검증 7규칙·§9-A 이름 고정·§10 일정·§11 LLM), `requirements.md`(기준정보 15표·**운영 22표**·F1~F23 배정·§2 결정 A~L), `CLAUDE.md`, `docs/디자인_규칙.md`, `docs/_시안/` |
 | **코드** | `app.py`·`config/` 2, `modules/` 9종(`models`·`db`·`seed`·`sn_util`·`issues`·`extract`·`milestone`·`llm_client`·**`meetings`**), `views/` 6종(`settings`·`ledger`·`inbox`·**`meeting`**·`theme`·`ui`), `diagnostics/` 4종, `tests/`(바탕 2개 + **S7 슬라이스 시험**), `static/`(토큰·글꼴 서브셋), `data/samples/`(기준정보 CSV 15종 99행 + `mirror/`). **선언된 표 37개**(기준정보 15 + 운영 22) |
 | **장치** | `.gitignore`·권한 규칙·가드 훅(FAIL 0/26)·`roadmap.py`·`design_check.py`, `.claude/agents/` **6종**(`spec-writer`·`code-gen`·`test-writer`·`spec-guard`·`code-reviewer`·`ui-reviewer`), `.claude/skills/slice/` |
-| **없다** | `views/knowledge.py`·`home.py`, `modules/knowledge.py`·`pptx_export.py` — S8 이후. **S0~S6 의 슬라이스 테스트**(S7 만 있다, P4). 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(강등 경로를 쓴다) |
-| **깃** | `main` = `origin/main` = **`f199936`**. 2026-11-13 커밋 8개 — `d059387` 컴포넌트 토큰 · `adf6d2a` 재점검 반려 5건 · `6b068be` 미결 A·B · `7989efa` 사건 당시 단계 · `a6c9433` 에이전트 묶음 · `fcb077b` 로드맵 대조 · `935bc3e` 테스트 수단 · `f199936` v2e-studio 2차로. **S7 은 아직 커밋 전** |
+| **없다** | `views/knowledge.py`·`views/home.py`, `modules/knowledge.py`, 지표 표 3종(`metric_def`·`metric_value`·`app_setting`)·`modules/metrics.py` — S7-b 이후. `modules/pptx_export.py` 는 **있다**(S8). **S0~S6 의 슬라이스 테스트**(S7 만 있다, P4). 선택 라이브러리 `st_aggrid`·`streamlit_drawable_canvas` 미설치(강등 경로를 쓴다) |
+| **깃** | `main` = `origin/main` = **`5abfc46`**. 2026-11-13 커밋 12개 — `935bc3e` 테스트 수단 · `fcb077b` 로드맵 대조 · `a6c9433` 에이전트 묶음 · `7989efa` 사건 당시 단계 · `6b068be` 미결 A·B · `adf6d2a` 재점검 반려 5건 · `d059387` 컴포넌트 토큰 · `2872d00` S7 정본 · `f199936` v2e-studio 2차로 · `22f1931` **S7 회의자료** · `770e7b0` 첫 실행 시드·배포 안내 · `33ec0c5` **S8 발행·PPTX + 데모 LLM** · `942cb16` openai 갈래 · `5abfc46` 데모 의존성. **S7·S8 은 커밋됐다.** 지금부터의 작업은 **커밋하지 않는다**(2026-11-13 지시) |
 
 ## 흐름
 

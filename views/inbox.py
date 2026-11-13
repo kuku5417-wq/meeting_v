@@ -88,6 +88,22 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
                 st.rerun()
 
 
+def _run_ai(text: str) -> None:
+    """메모를 LLM 에 보내 후보를 `session_state` 에 담는다.
+
+    「기록하고 다음」과 「다시 정리」가 **같은 길**을 쓴다 — 두 군데에 같은 코드를 두지 않는다.
+    설정이 없거나 부르다 실패하면 후보를 비우고 까닭을 보인다. 그 뒤는 **직접 적기**로 이어진다.
+    """
+    try:
+        with st.spinner("LLM 이 메모를 정리하는 중"):
+            kept, dropped = extract.extract(text)
+    except (LLMNotConfigured, LLMFailed) as e:
+        st.error(f"{e} — 아래에서 **직접 적기**로 이어갈 수 있다.")
+        kept, dropped = [], []
+    st.session_state["cands"] = kept
+    st.session_state["dropped"] = dropped
+
+
 def render() -> None:
     st.header("기록함")
     st.caption(
@@ -104,7 +120,9 @@ def render() -> None:
     )
 
     col1, col2 = st.columns([1, 3])
-    # 「다음 일로 넘어가기」 토큰 (디자인_규칙 §3) — 적으면 다음 칸(후보 확인)으로 간다.
+    # 「다음 일로 넘어가기」 토큰 (디자인_규칙 §3) — **한 번 누르면 후보 확인까지** 간다.
+    # 전에는 「저장」만 하고 「AI 로 정리」를 또 눌러야 했다. 토큰 이름이 「다음으로」인데
+    # 제자리에 서 있었던 셈이라, 2026-11-13 지적을 받아 한 걸음으로 합쳤다.
     # 이 화면의 유일한 주 버튼이다.
     if col1.button("기록하고 다음", type="primary", icon=":material/arrow_forward:",
                    disabled=not raw.strip(), help="메모를 붙여넣으면 누를 수 있다"):
@@ -113,6 +131,10 @@ def render() -> None:
         # 아래 「최근 메모」목록이 **먼저 고른 줄**을 기억하므로, 거기도 새 메모로 옮긴다.
         # 옮기지 않으면 목록이 옛 메모를 돌려주어 방금 적은 메모가 화면에서 밀린다.
         st.session_state["memo_list__sel"] = mid
+        st.session_state["cands"] = []
+        st.session_state["dropped"] = []
+        if is_configured():
+            _run_ai(raw)
         st.success(f"메모 저장 — {mid[:8]}")
 
     if not is_configured():
@@ -136,16 +158,10 @@ def render() -> None:
         st.code(text, language=None)
 
         if is_configured():
-            if st.button("AI 로 정리", icon=":material/auto_awesome:"):
-                try:
-                    with st.spinner("LLM 이 메모를 정리하는 중"):
-                        kept, dropped = extract.extract(text)
-                except (LLMNotConfigured, LLMFailed) as e:
-                    # 설정이 없거나(정상) 부르다 실패했거나(사람이 고칠 것). 둘 다 **직접 적기**로 이어진다
-                    st.error(f"{e} — 아래에서 **직접 적기**로 이어갈 수 있다.")
-                    kept, dropped = [], []
-                st.session_state["cands"] = kept
-                st.session_state["dropped"] = dropped
+            # 「기록하고 다음」이 이미 한 번 돌렸다. 이것은 **다시** 돌리는 길이다.
+            if st.button("AI 로 다시 정리", icon=":material/auto_awesome:"):
+                _run_ai(text)
+                st.rerun()
 
             dropped = st.session_state.get("dropped") or []
             if dropped:
@@ -159,13 +175,23 @@ def render() -> None:
                 _candidate_rows(memo_id, cands, by_ai=True, depts=depts)
         else:
             st.markdown("**직접 적기**")
-            st.caption("메모에서 읽은 대로 적는다. 사람이 적은 값이므로 근거 구간을 따로 두지 않는다.")
-            # 날짜만은 메모에서 찾아 미리 채운다 — 사람이 다시 치지 않게. 틀리면 고치면 된다.
+            st.caption(
+                "메모에서 읽은 대로 적는다. **날짜·호선·장비는 메모에서 찾아 미리 채웠다** — "
+                "코드가 읽은 것이라 LLM 이 없어도 찬다. 틀리면 고치면 된다."
+            )
             blank: dict = {"title": "", "hull": "", "equipment": "", "body": ""}
             found = extract.date_for(text, None)
             if found is not None:
                 day, where = found
                 blank |= {"occurred_on": day, "_date_span": where, "_date_text": text[where[0]:where[1]]}
+            # 호선·장비도 날짜와 같은 수준으로 읽는다 (2026-11-13). 기준정보·별칭 사전에
+            # 걸리는 말만 받으므로, 못 찾으면 빈 칸으로 둔다 — 지어내지 않는다.
+            hull = extract.find_hull(text)
+            if hull is not None:
+                blank["hull"] = hull[0]
+            equip = extract.find_equipment(text)
+            if equip is not None:
+                blank["equipment"] = equip[0]
             _candidate_rows(memo_id, [blank], by_ai=False, depts=depts)
 
     st.divider()

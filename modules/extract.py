@@ -154,6 +154,49 @@ def _date_or_none(year: int, month: int, day: int) -> datetime.date | None:
         return None
 
 
+# 호선 표기 — `SN2511` 꼴과 맨 네 자리. 맨 네 자리는 **기준정보에 그 호선이 있을 때만** 받는다
+# (`11/12`·`40도`·`2026` 이 호선이 되지 않게). 날짜와 같은 태도다 — 덜 찾더라도 잘못 찾지 않는다.
+_HULL_MARKS = (
+    re.compile(r"(?i)\bSN\s?\d{4}\b"),
+    re.compile(r"(?<!\d)\d{4}(?!\d)"),
+)
+
+
+def find_hull(text: str) -> tuple[str, tuple[int, int]] | None:
+    """메모에서 **기준정보에 있는 호선**을 찾는다. `(원문 표기, 구간)` 또는 `None`.
+
+    **코드가 읽는다 — LLM 이 없어도 찬다.** 발생일(`find_date`)과 같은 수준으로 맞춘 것이다.
+    2026-11-13 에 「호선번호가 메모에 있는데도 빈 칸으로 나온다」는 지적을 받아 더했다.
+    `ensure_sn` 이 `2511`·`sn2511` 을 `SN2511` 로 모으고, 기준정보에 없으면 받지 않는다.
+    """
+    for pattern in _HULL_MARKS:
+        for hit in pattern.finditer(text):
+            if issues.resolves("hull", hit.group()):
+                return hit.group(), (hit.start(), hit.end())
+    return None
+
+
+def find_equipment(text: str) -> tuple[str, tuple[int, int]] | None:
+    """메모에서 **별칭 사전에 있는 장비 표기**를 찾는다. `(원문 표기, 구간)` 또는 `None`.
+
+    `DG2`·`C/P #3` 처럼 현장에서 쓰는 말을 그대로 찾는다 — 사전에 있는 말만 받는다.
+    **메모에 먼저 나온 것**을 집는다. 같은 자리에서 겹치면 긴 쪽이 이긴다
+    (`씰` 이 `메카니컬씰` 을 가로채지 않게).
+    """
+    low = text.lower()
+    best: tuple[int, int] | None = None  # (시작, 길이)
+    for mark in issues.known_marks("installed_equipment"):
+        at = low.find(mark.lower())
+        if at < 0:
+            continue
+        if best is None or at < best[0] or (at == best[0] and len(mark) > best[1]):
+            best = (at, len(mark))
+    if best is None:
+        return None
+    start, size = best
+    return text[start:start + size], (start, start + size)
+
+
 def date_for(raw: str, span: tuple[int, int] | None, base: datetime.date | None = None):
     """그 후보의 발생일. **제 근거 구간 안**을 먼저 보고, 없으면 메모 전체를 본다.
 
@@ -192,6 +235,16 @@ def verify(
         if found is not None:
             day, where = found
             row |= {"occurred_on": day, "_date_span": where, "_date_text": raw[where[0]:where[1]]}
+        # LLM 이 호선·장비를 빠뜨렸으면 **코드가 읽어 메운다.** 지어내는 것이 아니라
+        # 기준정보·별칭 사전에 걸리는 말만 받으므로 §6-3 과 어긋나지 않는다.
+        if not (row.get("hull") or "").strip():
+            hull = find_hull(raw)
+            if hull is not None:
+                row["hull"] = hull[0]
+        if not (row.get("equipment") or "").strip():
+            equip = find_equipment(raw)
+            if equip is not None:
+                row["equipment"] = equip[0]
         kept.append(row)
     return kept, dropped
 

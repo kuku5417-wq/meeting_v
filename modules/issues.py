@@ -134,6 +134,26 @@ def _resolve(s: Session, kind: str, raw: str) -> str | None:
     return None
 
 
+def resolves(kind: str, raw: str) -> str | None:
+    """현장 표기가 기준정보에 걸리는가. 걸리면 그 ID, 아니면 `None`.
+
+    `_resolve` 를 세션 밖에서 쓰라고 연 창구다 — 기록함이 메모에서 호선을 읽을 때 쓴다.
+    """
+    with session() as s:
+        return _resolve(s, kind, raw)
+
+
+def known_marks(kind: str) -> list[str]:
+    """별칭 사전에 적힌 **현장 표기**들. 긴 것부터 준다.
+
+    `DG2`·`C/P #3` 처럼 사람이 쓰는 말이다. 메모에서 장비를 읽을 때 이 말들을 찾는다.
+    긴 것부터인 이유는 `씰` 이 `메카니컬씰` 을 가로채지 않게 하기 위해서다.
+    """
+    with session() as s:
+        rows = s.execute(select(m.Alias.text).where(m.Alias.target_kind == kind)).scalars().all()
+    return sorted({r for r in rows if r}, key=len, reverse=True)
+
+
 def _add_tag(s: Session, block_id: str, kind: str, raw: str) -> None:
     target = _resolve(s, kind, raw)
     s.add(
