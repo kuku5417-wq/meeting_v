@@ -43,6 +43,18 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
             equip = col3.text_input("장비", value=c.get("equipment", ""), key=f"ce_{memo_id}_{i}")
             body = st.text_area("현상", value=c.get("body", ""), key=f"cy_{memo_id}_{i}")
 
+            # 「발생일」 — **일이 난 날**이지 적은 날이 아니다. 그 날의 호선 단계를 잡는 데 쓴다.
+            # 날짜 고르기는 캘린더 한 칸이다 (디자인_규칙 §3). 메모에서 읽었으면 미리 차 있고,
+            # 못 읽었으면 **비워 둔다** — 근거 없는 값은 채우지 않는다 (CLAUDE.md §6-3).
+            col1, col2 = st.columns([1, 2], vertical_alignment="center")
+            day = col1.date_input(
+                "발생일", value=c.get("occurred_on"), key=f"cdt_{memo_id}_{i}", format="YYYY-MM-DD",
+                help="일이 난 날이다. 메모에 없으면 비워 둔다 — 적은 날로 대신하지 않는다",
+            )
+            read = (c.get("_date_text") or "").strip()
+            if read:
+                col2.caption(f"메모에서 읽음 — 「{read[:40]}」")
+
             if c.get("quote"):
                 st.markdown(theme.evidence(f"근거: {c['quote']}"), unsafe_allow_html=True)
 
@@ -59,7 +71,13 @@ def _candidate_rows(memo_id: str, cands: list[dict], by_ai: bool, depts: dict[st
                 bid = extract.register(
                     memo_id,
                     {**c, "title": title, "block_type": btype, "hull": hull,
-                     "equipment": equip, "body": body,
+                     "equipment": equip, "body": body, "occurred_on": day,
+                     # 아래 칸들은 사람이 고친 값이다. **기계가 낸 원값**을 함께 넘겨야
+                     # (AI 값, 사람 값)이 둘 다 남는다 (CLAUDE.md §6-2).
+                     "_ai": {f: c.get(f, "") for f in extract.AI_FIELDS}
+                            | {"occurred_on": c.get("occurred_on")},
+                     # 사람이 날짜를 고쳤으면 메모 구간은 더 이상 그 값의 근거가 아니다
+                     "_date_span": c.get("_date_span") if day == c.get("occurred_on") else None,
                      "department_id": None if dept == "(없음)" else dept},
                     by_ai=by_ai,
                 )
@@ -130,8 +148,13 @@ def render() -> None:
         else:
             st.markdown("**직접 적기**")
             st.caption("메모에서 읽은 대로 적는다. 사람이 적은 값이므로 근거 구간을 따로 두지 않는다.")
-            _candidate_rows(memo_id, [{"title": "", "hull": "", "equipment": "", "body": ""}],
-                            by_ai=False, depts=depts)
+            # 날짜만은 메모에서 찾아 미리 채운다 — 사람이 다시 치지 않게. 틀리면 고치면 된다.
+            blank: dict = {"title": "", "hull": "", "equipment": "", "body": ""}
+            found = extract.date_for(text, None)
+            if found is not None:
+                day, where = found
+                blank |= {"occurred_on": day, "_date_span": where, "_date_text": text[where[0]:where[1]]}
+            _candidate_rows(memo_id, [blank], by_ai=False, depts=depts)
 
     st.divider()
     st.markdown("**최근 메모**")

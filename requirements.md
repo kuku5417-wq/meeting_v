@@ -59,7 +59,7 @@
 | `week` | `id`(`2026-W42` ISO 주차), `start_date`, `end_date` | 전부 |
 | `section` | `id`, `week_id`, `department_id`, `status`, `confirmed_by`, `confirmed_at` | S6. 주차×부서 1행. **확정 개념은 M12에서 없앴다** — `status`는 옛 기록으로만 남고 아무것도 잠그지 않는다 |
 | `memo` | `id`, `section_id`, `author_id`, `raw_text`, `created_at`, `revises_id` | S6. **수정 금지.** 원문을 고치면 새 행을 만들고 `revises_id`로 앞 판을 가리킨다 (`CLAUDE.md` §6-1) |
-| `block` | `id`, `block_type`(share/problem/issue/dashboard), `title`, `body`, `status`, `owner_department_id`, `created_week_id`, `valid_until`, `origin`, `created_by`, `draft_state`(none/wip/ok), `cause_text`, `action_text`, `decision_needed`, `important`, `due_event`, `due_date`, `alert_days`, `alert_off_reason`, `alert_off_at`, `alert_off_date` | **S5의 중심.** 이관해도 `id`는 그대로, `owner_department_id`만 바뀐다 |
+| `block` | `id`, `block_type`(share/problem/issue/dashboard), `title`, `body`, `status`, `owner_department_id`, `created_week_id`, `valid_until`, **`occurred_on`**(2026-11-13 추가 — 일이 난 날. 적은 날이 아니다. 그 날의 호선 단계를 잡는 데 쓴다, §2-C), `origin`, `created_by`, `draft_state`(none/wip/ok), `cause_text`, `action_text`, `decision_needed`, `important`, `due_event`, `due_date`, `alert_days`, `alert_off_reason`, `alert_off_at`, `alert_off_date` | **S5의 중심.** 이관해도 `id`는 그대로, `owner_department_id`만 바뀐다 |
 | `section_block` | `section_id`, `block_id`, `order_no`, `carried_over` | S5. 어느 주차 섹션에 실렸는지 |
 | `block_history` | `id`, `block_id`, `week_id`, `department_id`, `status`, `note`, `created_at` | S5. 주차별 진행 한 줄 (F4) |
 | `source_span` | `id`, `block_id`, `field`, `memo_id`, `start`, `end`, `quote` | S6. 근거 구간 (`CLAUDE.md` §6-3) |
@@ -152,8 +152,8 @@
 
 | F | 기능 | 슬라이스 | 사외망 | 비고 |
 |---|---|---|---|---|
-| F1 | 메모 AI 정리 | S6 기록함 | ○ | LLM 창구는 S3에 있다. 사내 LLM 설정이 없으면 수동 입력으로 떨어진다 |
-| F2 | 이슈 원장 | **S5** | ○ | 데이터 그리드. `st_aggrid` 없으면 `st.data_editor`로 강등 (§4⑦) |
+| F1 | 메모 AI 정리 | S6 기록함 | ○ | LLM 창구는 S3에 있다. 사내 LLM 설정이 없으면 수동 입력으로 떨어진다. **발생일은 메모에서 읽어 미리 채운다** (§2-C) |
+| F2 | 이슈 원장 | **S5** | ○ | 데이터 그리드. `st_aggrid` 없으면 `st.data_editor`로 강등 (§4⑦). 한 줄에 **「단계」**(사건 당시 호선 단계, §2-C)가 함께 보인다 |
 | F3 | 지식 매핑 | **S5** | ○ | 별칭 사전 + `ensure_sn`. 둘 다 있다 |
 | F4 | 주간 업데이트 | **S5** | ○ | `block_history` 한 줄 |
 | F5 | 1차 초안 | **S5** | ○ | 사진 4종 1차 확정(2026-11-12). 마킹은 좌표 JSON, `drawable_canvas` 없으면 강등 |
@@ -237,6 +237,10 @@ F22는 사내망 고정본(P5)에서만 가능하다.
 |---|---|---|---|
 | A | **회의자료는 `meeting` 하나로 만든다.** `meeting_deck` 은 쓰지 않는다 | 판(`version`)·호선 회의·취합이 `meeting` 에만 있다. 판이 없으면 F8(사실 되먹임)·F10(취합)을 세울 수 없다. 표 이름을 원본 `docs/03` 그대로 쓰기로 한 것과도 맞는다 | §1-2 의 `meeting_deck` 줄을 `meeting` 으로 돌림. v2e-studio 의 `?kind=` 는 `meeting.kind`, 시안의 「제출」은 `meeting.status` 로 읽는다. `deck_slide.deck_id` 는 `meeting.id` 를 가리킨다 |
 | B | **`hull.stage` 는 볼 때마다 계산한다.** DB 에는 쓰지 않는다 | 일정이 바뀌면 그 자리에서 따라간다. 일정 경보(F21)가 이미 같은 방식이다 — "날짜는 저장하지 않고 볼 때마다 다시 잡는다" | `views/settings.py` `COMPUTED` — 보일 때 `milestone.stage()` 로 그리고, 저장할 때는 DB 값으로 되돌린다. `stage` 칸 잠금은 그대로. `milestone._read()` 에 파일 시각 기준 캐시를 뒀다 |
+| C | **`block` 에 발생일(`occurred_on`) 칸을 더하고, 「그때 단계」를 보인다** | 단계는 **언제를 기준으로 보느냐에 따라 달라지는 값**이다. SN2512 는 11-12 에 시운전기간, 11-13 에 안벽기간이다(`STTO` 11-12, `GASFROM` 11-17). 사례로 쌓을 때 중요한 것은 **일이 난 날의 단계**다 | `modules/extract.py` `find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남긴다. `issues.stage_at()` 이 (그때, 지금)을 돌려준다. 보이는 곳: 원장 목록 카드(「단계」 칸), 이슈 상세 머리, 상세 「지식 매핑」 탭의 발생일 칸(**호선 옆** — 호선과 발생일이 한 쌍이어야 단계가 잡힌다), 원장 등록 폼. 사례 카드는 S8 에서 같은 함수를 쓴다 |
+
+> **B 와 C 는 같은 규칙의 두 쪽이다.** 단계는 저장하는 값이 아니라 **날짜를 주면 나오는 값**이다.
+> 호선 표는 오늘로 묻고, 이슈는 발생일로 묻는다.
 
 > **A 의 남은 몫** — `deck_slide`·`slide_object`(시안 유래)와 `report_item`(원본 유래)이 둘 다 "회의자료의 한 장"을
 > 가리킨다. 어느 쪽이 장의 정본인지는 **S7 에서 화면을 그릴 때** 본다. 표를 선언하기 전에 정하면 되고, A 의 결정이

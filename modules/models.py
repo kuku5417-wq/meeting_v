@@ -281,6 +281,10 @@ class Block(Base):
     owner_department_id: Mapped[str | None] = mapped_column(ForeignKey("department.id"))
     created_week_id: Mapped[str | None] = mapped_column(ForeignKey("week.id"))
     valid_until: Mapped[datetime.date | None] = mapped_column(Date)
+    # **사건이 난 날.** 적은 날이 아니라 일이 난 날이다 — 그 날의 호선 단계를 잡는 데 쓴다
+    # (`milestone.stage(hull, on=occurred_on)`). 메모에 날짜가 적혀 있으면 자동으로 찬다.
+    # 2026-11-13 에 칸을 더하기로 결정 (`requirements.md` §2-C, `CLAUDE.md` §2 "칸 추가는 먼저 묻는다").
+    occurred_on: Mapped[datetime.date | None] = mapped_column(Date)
     origin: Mapped[str | None] = mapped_column(String(16))  # memo / meeting / manual
     created_by: Mapped[str | None] = mapped_column(ForeignKey("person.id"))
     # 1차 초안 「상세 한 장」 (F5)

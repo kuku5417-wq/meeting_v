@@ -74,6 +74,19 @@ def _tab_history(block_id: str) -> None:
 
 
 def _tab_tags(block_id: str) -> None:
+    # 발생일은 **호선과 한 쌍**이다 — 둘이 있어야 「그때 단계」가 잡히므로 호선 옆에 둔다.
+    # 날짜 고르기는 캘린더 한 칸이다 (디자인_규칙 §3). 고치면 바로 저장된다.
+    col1, col2 = st.columns([1, 2], vertical_alignment="center")
+    col1.date_input("발생일", value=issues.occurred_of(block_id), key=f"occ_{block_id}",
+                    format="YYYY-MM-DD", on_change=_save_occurred, args=(block_id,),
+                    help="일이 난 날이다. 모르면 비워 둔다 — 적은 날로 대신하지 않는다")
+    then, now = issues.stage_at(block_id)
+    if then:
+        col2.caption(f"고치면 바로 저장된다. 그 날 이 호선은 **{then}** 이었다 — 지금은 **{now}**.")
+    else:
+        col2.caption("고치면 바로 저장된다. 발생일과 호선이 둘 다 있어야 「그때 단계」가 잡힌다.")
+
+    st.divider()
     rows = issues.tags(block_id)
     if rows:
         for r in rows:
@@ -162,6 +175,11 @@ def _tab_draft(block_id: str) -> None:
         st.rerun()
 
 
+def _save_occurred(block_id: str) -> None:
+    issues.set_occurred(block_id, st.session_state.get(f"occ_{block_id}"))
+    st.toast("발생일 저장됨", icon=":material/check:")
+
+
 def _tab_alert(block_id: str) -> None:
     info = issues.due_of(block_id)
     if not info["hull"]:
@@ -180,7 +198,7 @@ def _tab_alert(block_id: str) -> None:
     )
     if evt == "DATE":
         col2.date_input("날짜", value=info["due_date"], key=f"day_{block_id}",
-                        on_change=_save_due, args=(block_id,))
+                        format="YYYY-MM-DD", on_change=_save_due, args=(block_id,))
     col3.number_input("경보 일수 (D-n)", 1, 365, int(info["alert_days"]),
                       key=f"days_{block_id}", on_change=_save_due, args=(block_id,))
 
@@ -213,6 +231,18 @@ def _detail(row: dict[str, object]) -> None:
     )
     st.caption(str(row["제목"]))
 
+    # 사건 당시 단계 — 단계는 날짜에 따라 달라진다 (`SPEC.md` §3-3). 그때와 지금이 다르면 둘 다.
+    # 칩만 홀로 두지 않고 무엇의 값인지 글자를 앞에 쓴다 (디자인_규칙 2-4).
+    # 호선이 안 걸렸거나 발생일이 없으면 아무것도 보이지 않는다.
+    then, now = issues.stage_at(block_id)
+    if then and then != now:
+        st.markdown(
+            f'단계 — 그때 {theme.chip(then)} · 지금 {theme.chip(now)}', unsafe_allow_html=True
+        )
+        st.caption("일이 난 날의 호선 단계와 오늘의 단계가 다르다. 사례로 쌓일 때는 「그때」를 쓴다.")
+    elif then or now:
+        st.markdown(f"단계 {theme.chip(then or now)}", unsafe_allow_html=True)
+
     tab_hist, tab_tag, tab_draft, tab_alert = st.tabs(
         ["주차별 진행", "지식 매핑", "1차 초안", "일정 경보"]
     )
@@ -237,6 +267,10 @@ def _new_issue(depts: dict[str, str]) -> None:
         hull = col3.text_input("호선", placeholder="2511 · SN2511")
         equip = st.text_input("장비 (현장 표기 그대로)", placeholder="DG2 · D/G #2 · 2번 발전기")
         body = st.text_area("현상", placeholder="무엇이 어떻게 되고 있는가")
+        day = st.date_input(
+            "발생일", value=None, format="YYYY-MM-DD",
+            help="일이 난 날이다. 모르면 비워 둔다 — 적은 날로 대신하지 않는다",
+        )
         # 이 화면의 **유일한** 주 버튼이다 (규칙 2-5)
         if st.form_submit_button("등록", type="primary", icon=":material/add:"):
             if not title.strip():
@@ -245,7 +279,7 @@ def _new_issue(depts: dict[str, str]) -> None:
             bid = issues.create_block(
                 title=title, block_type=block_type,
                 owner_department_id=None if dept == "(없음)" else dept,
-                body=body, hull_text=hull, equipment_text=equip,
+                body=body, hull_text=hull, equipment_text=equip, occurred_on=day,
             )
             st.toast(f"{bid} 등록", icon=":material/check:")
             st.rerun()
@@ -306,7 +340,7 @@ def render() -> None:
         # 사람이 적은 글은 `ui.card_list` 가 이스케이프한다. 칩 HTML 만 `chips` 로 따로 준다.
         meta=lambda r: " · ".join(
             str(x) for x in (
-                r["호선"], r["장비"], r["부서"], f"매핑 {r['매핑']}", r["금주 진행"],
+                r["호선"], r["장비"], r["부서"], r["단계"], f"매핑 {r['매핑']}", r["금주 진행"],
             ) if x
         ),
         chips=lambda r: " ".join(

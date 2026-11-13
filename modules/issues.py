@@ -81,11 +81,15 @@ def create_block(
     body: str | None = None,
     hull_text: str = "",
     equipment_text: str = "",
+    occurred_on: datetime.date | None = None,
 ) -> str:
     """이슈를 하나 등록하고 ID 를 돌려준다 (F2).
 
     `hull_text`·`equipment_text` 는 현장 표기 그대로 받는다. 기준정보에 걸리면 `target_id` 를
     채우고, 안 걸리면 `raw_text` 만 남긴다 — 「미등록」으로 보인다 (F3).
+
+    `occurred_on` 은 **일이 난 날**이다. 적은 날이 아니라서 따로 받는다 — 그 날의 호선 단계를
+    잡는 데 쓴다 (`stage_at`). 모르면 비워 둔다.
     """
     now = datetime.datetime.now()
     with session() as s:
@@ -100,6 +104,7 @@ def create_block(
                 status="신규",
                 owner_department_id=owner_department_id,
                 created_week_id=week.id,
+                occurred_on=occurred_on,
                 origin="manual",
                 draft_state="none",
                 important=False,
@@ -217,7 +222,9 @@ def tags(block_id: str) -> list[dict[str, str]]:
 def ledger(status: str | None = None, department_id: str | None = None) -> list[dict[str, object]]:
     """원장 그리드 한 판 (F2).
 
-    칸: ID · 유형 · 부서 · 호선 · 장비 · 제목 · 금주 진행 · 매핑 n/5 · 상태
+    칸: ID · 유형 · 부서 · 호선 · 장비 · 제목 · 금주 진행 · 매핑 n/5 · **단계** · 경보 · 초안 · 상태
+
+    「단계」는 **사건 당시 호선 단계**다 (`requirements.md` §2-C). 지금과 다르면 둘 다 적는다.
     """
     this_week = week_id()
     out: list[dict[str, object]] = []
@@ -251,11 +258,78 @@ def ledger(status: str | None = None, department_id: str | None = None) -> list[
                 "제목": b.title,
                 "금주 진행": note or "",
                 "매핑": f"{n}/{total}",
+                "단계": _stage_label(s, b),
                 "경보": f"{label} D{left:+d}" if label else (f"D{left:+d}" if left is not None else ""),
                 "초안": {"none": "", "wip": "작성 중", "ok": "완료"}.get(b.draft_state or "none", ""),
                 "상태": b.status,
             })
     return out
+
+
+# ── 사건 당시 단계 ─────────────────────────────────────────────────────────
+def _hull_of(s: Session, block_id: str) -> str | None:
+    """그 블록이 걸린 호선 ID. 「미등록」(raw_text 만 있는 것)은 호선이 아니다."""
+    return s.execute(
+        select(m.BlockTag.target_id).where(
+            m.BlockTag.block_id == block_id,
+            m.BlockTag.kind == "hull",
+            m.BlockTag.target_id.is_not(None),
+            m.BlockTag.dismissed.is_not(True),
+        )
+    ).scalars().first()
+
+
+def stage_at(block_id: str) -> tuple[str, str]:
+    """**(사건 당시 단계, 지금 단계).** 호선이나 발생일이 없으면 그 자리는 빈 값이다.
+
+    단계는 날짜에 따라 달라지는 값이다 (`SPEC.md` §3-3). 같은 호선이라도 어제는 시운전기간,
+    오늘은 안벽기간일 수 있다 — 그래서 **일이 난 날**로 한 번, **오늘**로 한 번 잡는다.
+    저장하지 않는다. 일정이 바뀌면 다음에 볼 때 따라간다.
+    """
+    with session() as s:
+        b = s.get(m.Block, block_id)
+        hull = _hull_of(s, block_id)
+        if not hull:
+            return "", ""
+        then = milestone.stage(hull, on=b.occurred_on)[0] if b.occurred_on else ""
+        return then, milestone.stage(hull)[0]
+
+
+def set_occurred(block_id: str, day: datetime.date | None) -> None:
+    """발생일을 고친다. 비우면 「그때 단계」가 사라진다 — 모르는 날을 지어내지 않는다.
+
+    사람이 고른 날에는 **메모 구간이 근거가 아니다.** 메모에서 읽어 둔 근거를 지운다 (§6-3) —
+    받치지 못하는 근거를 남겨 두면 나중에 그 구간이 값을 증명하는 것처럼 보인다.
+    """
+    with session() as s:
+        blk = s.get(m.Block, block_id)
+        if blk.occurred_on != day:
+            s.execute(
+                m.SourceSpan.__table__.delete().where(
+                    m.SourceSpan.block_id == block_id,
+                    m.SourceSpan.field == "occurred_on",
+                )
+            )
+        blk.occurred_on = day
+        s.commit()
+
+
+def occurred_of(block_id: str) -> datetime.date | None:
+    with session() as s:
+        return s.get(m.Block, block_id).occurred_on
+
+
+def _stage_label(s: Session, b: m.Block) -> str:
+    """원장 한 줄에 넣을 단계 글. 그때와 지금이 다르면 둘 다 적는다."""
+    hull = _hull_of(s, b.id)
+    if not hull:
+        return ""
+    now = milestone.stage(hull)[0]
+    then = milestone.stage(hull, on=b.occurred_on)[0] if b.occurred_on else ""
+    if then and then != now:
+        return f"그때 {then} · 지금 {now}"
+    # 홀로 선 값은 무엇의 값인지 모른다 — 「매핑 3/5」 처럼 이름을 앞에 쓴다
+    return f"단계 {now}" if now else ""
 
 
 def counts() -> dict[str, int]:
