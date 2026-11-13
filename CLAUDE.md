@@ -86,6 +86,10 @@ uv run python -X utf8 diagnostics/check_data.py; echo "EXIT=$?"
 ```
 
 ```bash
+uv run python -X utf8 -m pytest
+```
+
+```bash
 cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 ```
 

@@ -6,7 +6,7 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 58%** (25/43) ██████░░░░
+**전체 진행율 60%** (26/43) ██████░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
@@ -15,7 +15,7 @@
 | P1. 안전장치 (3일차 교육 적용) | 5/8 | 62% | ██████░░░░ |
 | P2. 기반 | 5/5 | 100% | ██████████ |
 | P3. 화면 | 4/8 | 50% | █████░░░░░ |
-| P4. 검증 | 0/7 | 0% | ░░░░░░░░░░ |
+| P4. 검증 | 1/7 | 14% | █░░░░░░░░░ |
 | P5. 사내망 고정본 | 0/3 | 0% | ░░░░░░░░░░ |
 <!-- progress:end -->
 
@@ -26,11 +26,14 @@
    **표현은 `report_item`, 사실은 `block`** 경계가 F8의 전제다. 표는 아직 선언하지 않았다.
    먼저 정할 것 하나: `deck_slide`·`slide_object`(시안 유래)와 `report_item`(원본 유래) 중
    **어느 쪽이 "회의자료 한 장"의 정본인가** (`requirements.md` §2 A 아래 쪽지). 표를 선언하기 전에 정한다.
-2. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. 언제든 할 수 있다.
-3. **쌓인 [제안]** — `ui-reviewer` 가 남긴 것들(사이드바 개발 진단, 이슈 등록 폼 중복,
+2. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
+   S7 을 `/slice` 로 한 바퀴 돌려 본 뒤, 업무 규칙(종결 권한·상태 전이·`ensure_sn`·근거 없는 값 버리기)에
+   테스트를 소급해서 붙일지 정한다.
+3. **P1 마무리** — 뚫어 보기 5가지를 직접 돌려 "뚫어 보기 기록" 표를 채운다. 언제든 할 수 있다.
+4. **쌓인 [제안]** — `ui-reviewer` 가 남긴 것들(사이드바 개발 진단, 이슈 등록 폼 중복,
    원장이 목록과 일괄 정리를 두 벌 보여 주는 것, 상세가 목록에서 먼 것 등). 그 화면을 손댈 때 함께 한다.
 
-> 2026-11-13 에 끝난 것: SD(디자인) 전부, `requirements.md` §2 결정 2건, 사건 당시 단계(§2-C).
+> 2026-11-13 에 끝난 것: SD(디자인) 전부, `requirements.md` §2 결정 2건, 사건 당시 단계(§2-C), **테스트 수단**(pytest·`tests/`).
 
 ## 갱신 규칙
 
@@ -108,7 +111,7 @@ flowchart LR
 
 ### P4. 검증
 
-- [ ] **테스트를 돌릴 수단부터 만든다** — `pyproject.toml` 에 `pytest` 가 없고 `tests/` 도 없다. 그런데 `test-writer`·`code-reviewer` 는 둘 다 `uv run pytest` 를 전제한다. **이것부터 하지 않으면 `/slice` 가 2번 칸에서 멈춘다**
+- [x] **테스트를 돌릴 수단** (2026-11-13) — `pyproject.toml` 에 `[dependency-groups] dev` 로 pytest, `[tool.pytest.ini_options]`(`testpaths`·`pythonpath`), `tests/`(README + 바탕 테스트 2개). 명령은 **`uv run python -X utf8 -m pytest`** 다 — `-X utf8` 을 빼면 한글 시험 이름이 cp949 콘솔에서 깨져 실패 줄을 읽을 수 없다
 - [~] 슬라이스마다 `/slice` 로 진행 — **`test-writer` 테스트 통과**, `spec-guard`·**`code-reviewer`** `판정: 통과`. 지금까지는 `spec-guard` 만 돌렸다(S1~S6 소급 1회, 2026-11-12 **반려 14건** → 12건 처리, 2건은 2026-11-13에 결정으로 닫음). **S7부터 `/slice` 로 한 바퀴씩 돈다**
 - [ ] **S0~S6 에는 테스트가 없다** — `test-writer` 가 그때 없었고 `tests/` 자체가 없다. S7 을 `/slice` 로 돌린 뒤, 끝난 슬라이스에 테스트를 **소급해서** 붙일지 정한다
 - [ ] 화면 슬라이스마다 `ui-reviewer` `판정: 통과`, `design_check` **0건**
@@ -471,6 +474,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-13 | P4 | **테스트 수단 갖춤** — `pyproject.toml` 에 dev 묶음(pytest)·pytest 설정, `tests/`(README·`test_base_imports.py`·`test_base_doctests.py`). 명령을 `uv run python -X utf8 -m pytest` 로 정하고 `test-writer`·`code-reviewer` 의 명령도 맞췄다 | 19개 통과 / **일부러 예제를 틀리게 해서 실제로 반려되는 것까지 확인**(exit 1, 실패 줄의 한글 이름도 읽힘) / 예제가 0개인 모듈은 목록에서 빼 헛통과를 막음 | |
 | 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 |`a6c9433` |
 | 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 |`7989efa` |
 | 2026-11-13 | P0 | **미결 A·B 닫음** — 회의자료는 `meeting` 하나로, `hull.stage` 는 볼 때마다 계산. `requirements.md` §2 에 열려 있는 결정이 없어져 S7 이 열렸다 | 13척 중 12척이 DB 값과 일치, SN2512 만 날짜 때문에 다름(의도한 결과) |`6b068be` |
@@ -501,6 +505,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | **`config/settings.py`의 비밀값 읽기 시점 수정** | 처음에는 `st.secrets` 속성 접근을 `try`로 감쌌는데, Streamlit은 접근이 아니라 **읽는 시점**에 `StreamlitSecretNotFoundError`를 던진다. 그래서 `secrets.has()` 호출이 그대로 터졌다. `st.secrets.get(...)` 호출 자체를 감싸도록 고쳤다 — 사외망에서 `secrets.toml`이 없는 것이 정상 상태이므로 터지지 않고 기본값을 줘야 한다 |
 | 2026-11-13 | **디자인 묶음이 `ROADMAP.md`를 덮어썼다 — 커밋본에서 되살려 합쳤다** | 묶음의 `ROADMAP.md`(85줄)가 교육장 원본 골격이라, 이 저장소에서 쌓은 374줄(실적 로그·변경 기록·§9·§10·P2 상세·SD·뚫어 보기)과 **S-1~S6 완료 표시**가 통째로 날아갔다. `d55037f` 에서 복원하고 묶음에만 있던 디자인 항목(P0 2개·P4 1개)을 옮겨 붙였다. **첫날 경고한 그대로였다** — 다음에 묶음을 받을 때도 `ROADMAP.md`는 빼고 받는다 |
 | 2026-11-13 | **에이전트 묶음이 `ROADMAP.md`를 또 덮었다 (세 번째) — `HEAD` 에서 되살렸다** | 묶음의 `ROADMAP.md`(89줄·20%)는 **11-12 교육장 판**이라 S-1~S6·SD·§2 결정·실적 로그 499줄이 통째로 날아갔다. `git show HEAD:ROADMAP.md`(`7989efa`)로 되살리고, 묶음에만 있던 항목(P1 2개·P4 2개)을 손으로 더했다. **쪽지로는 세 번 다 못 막았다.** 앞으로는 ① 푸는 쪽에서 `ROADMAP.md` 를 빼고 ② 그래도 덮였으면 **먼저 `git show HEAD:ROADMAP.md > ROADMAP.md` 로 되살린 뒤** 묶음 판에만 있는 줄을 옮겨 붙인다. 묶음 판을 손보는 쪽은 잃는 것이 훨씬 많다 |
+| 2026-11-13 | **테스트 명령은 `uv run python -X utf8 -m pytest`** | 맨 `uv run pytest` 는 Windows 콘솔(cp949)에서 **한글 시험 이름을 깨뜨린다** — `code-reviewer` 가 읽어야 하는 실패 줄이 `test_����Ʈ��_…` 로 나온다. `tests/conftest.py` 에서 출력 인코딩을 바꿔 봤지만 pytest 가 더 먼저 출력을 잡아 소용없었다. `CLAUDE.md` §5 의 다른 명령과 같은 방식으로 맞췄고, 두 에이전트 파일의 명령도 고쳤다 |
 | 2026-11-13 | **`roadmap.py check` 가 헛경고를 내던 것을 고쳤다** | `changed_files()` 가 `git status --porcelain` 줄을 **자리로**(`line[3:]`) 잘랐는데, `git_out` 이 출력 앞뒤 공백을 떼는 바람에 첫 줄이 ` M ROADMAP.md` 면 한 칸 밀려 `OADMAP.md` 가 됐다. 그래서 ROADMAP.md 를 고쳐 놓고도 종료할 때마다 "갱신되지 않았다" 가 떴다. 한 번만 쪼개 이름을 얻도록 바꿨다 |
 | 2026-11-13 | **에이전트가 3종 → 6종, `/slice` 스킬 신설** | 2026-11-13 묶음. `test-writer`(슬라이스 테스트)·`code-reviewer`(diff·테스트 검토)가 들어와 **테스트와 코드 리뷰 공백**이 메워졌다. `code-gen` 은 이제 테스트를 직접 쓰지 않는다. `/slice` 가 code-gen → test-writer → (spec-guard·code-reviewer·ui-reviewer 동시) → 반려 2회까지 수정 순서를 묶는다. S0~S6 은 이 장치 없이 만들어져 **테스트가 없다**(P4) |
 | 2026-11-13 | **흰 사이드바·주 색 `#0963c4` 확정** (안 B) | `docs/디자인_규칙.md` 1절. 시안 v2m 의 네이비 사이드바를 따르지 않는다. SD 1차가 네이비로 만들어져 있어 다시 해야 한다 |

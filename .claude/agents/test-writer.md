@@ -31,7 +31,7 @@ model: sonnet
 
 ## 3. 규칙
 
-- 위치: `tests/test_<슬라이스>_*.py`. 실행: `uv run pytest -q`
+- 위치: `tests/test_<슬라이스>_*.py`. 실행: `uv run python -X utf8 -m pytest`
 - DB는 임시 파일이나 메모리 SQLite를 쓴다. `data/samples/masters/*.csv`는 읽기만 한다.
 - 사외망 전용이다. 네트워크, SOLA, NAS 경로를 부르는 테스트는 쓰지 않는다. LLM은 가짜 응답으로 바꿔 끼운다.
 - pytest가 설치돼 있지 않으면 `uv add`를 직접 하지 말고, 설치가 필요하다고 보고하고 멈춘다.

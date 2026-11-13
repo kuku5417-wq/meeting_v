@@ -20,8 +20,20 @@ ui = [
     "streamlit-drawable-canvas>=0.9",
 ]
 
+# 개발용 — 앱이 도는 데는 필요 없다. 그래서 `dependencies` 와 `check_libs.py` 의 REQUIRED 에
+# 넣지 않는다. `uv run pytest` 를 쓰면 uv 가 이 묶음을 알아서 함께 깔아 준다.
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]  # 저장소 뿌리에서 `modules`·`views` 를 그대로 임포트한다 (패키지로 깔지 않는다)
+addopts = "-q"
 
 [tool.ruff]
 line-length = 120
