@@ -23,6 +23,26 @@ st.set_page_config(page_title="회의자료·지식화", page_icon=":material/de
 theme.apply()
 
 
+@st.cache_resource
+def _first_run() -> dict[str, int]:
+    """DB 가 비어 있으면 기준정보를 한 번 적재한다.
+
+    **빈 DB 일 때만** 돈다 — `seed_masters()` 가 `is_seeded()` 로 DB 행을 보고 판단하므로,
+    이미 들어 있으면 아무것도 쓰지 않는다 (`code-gen.md` §4 — 1회 판정은 DB 로 한다).
+    화면에서 고친 값을 덮지 않는다. 덮는 것은 설정 화면의 **재시드**(`force=True`)뿐이다.
+
+    **왜 필요한가.** 파일이 남지 않는 곳(공개 데모·컨테이너)에서는 띄울 때마다 DB 가 빈다.
+    그러면 처음 들어온 사람에게 기준정보 0행인 앱이 보인다. 사내망에서는 첫 설치 때 한 번 돈다.
+    `@st.cache_resource` 라 프로세스당 한 번만 불린다.
+    """
+    from modules.seed import seed_masters
+
+    return seed_masters()
+
+
+_first_run()
+
+
 def home() -> None:
     st.subheader("홈")
     st.write("앱이 떴다. 이 화면은 S10에서 홈(F19)으로 바뀐다.")
