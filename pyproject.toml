@@ -20,18 +20,22 @@ ui = [
     "streamlit-drawable-canvas>=0.9",
 ]
 
-# 공개 데모 전용 — 외부 LLM(Claude). 사내망 고정본에서는 **깔지 않는다**
-# (`CLAUDE.md` §3·§6-9 의 예외, `modules/llm_client.py` 머리글).
-demo = [
-    "anthropic>=0.40",
-    "openai>=1.50",
-]
 
 # 개발용 — 앱이 도는 데는 필요 없다. 그래서 `dependencies` 와 `check_libs.py` 의 REQUIRED 에
 # 넣지 않는다. `uv run pytest` 를 쓰면 uv 가 이 묶음을 알아서 함께 깔아 준다.
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    { include-group = "demo" },
+]
+
+# 공개 데모 전용 — 외부 LLM (`CLAUDE.md` §3·§6-9 의 예외, `modules/llm_client.py` 머리글).
+# **`[project.optional-dependencies]` 가 아니라 여기 둔다** — Streamlit Community Cloud 는
+# `uv.lock` 으로 깔면서 **선택 묶음(extra)은 건너뛰고 `dev` 묶음만** 깐다 (2026-11-13 확인).
+# 그래서 `dev` 가 이 묶음을 품게 했다. **사내망 고정본에서는 이 묶음을 지운다.**
+demo = [
+    "anthropic>=0.40",
+    "openai>=1.50",
 ]
 
 [tool.uv]

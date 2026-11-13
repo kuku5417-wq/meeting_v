@@ -760,24 +760,24 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-demo = [
-    { name = "anthropic" },
-    { name = "openai" },
-]
 ui = [
     { name = "streamlit-aggrid" },
     { name = "streamlit-drawable-canvas" },
 ]
 
 [package.dev-dependencies]
+demo = [
+    { name = "anthropic" },
+    { name = "openai" },
+]
 dev = [
+    { name = "anthropic" },
+    { name = "openai" },
     { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", marker = "extra == 'demo'", specifier = ">=0.40" },
-    { name = "openai", marker = "extra == 'demo'", specifier = ">=1.50" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "python-pptx", specifier = ">=1.0" },
     { name = "sqlalchemy", specifier = ">=2.0" },
@@ -785,10 +785,18 @@ requires-dist = [
     { name = "streamlit-aggrid", marker = "extra == 'ui'", specifier = ">=1.0" },
     { name = "streamlit-drawable-canvas", marker = "extra == 'ui'", specifier = ">=0.9" },
 ]
-provides-extras = ["ui", "demo"]
+provides-extras = ["ui"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.0" }]
+demo = [
+    { name = "anthropic", specifier = ">=0.40" },
+    { name = "openai", specifier = ">=1.50" },
+]
+dev = [
+    { name = "anthropic", specifier = ">=0.40" },
+    { name = "openai", specifier = ">=1.50" },
+    { name = "pytest", specifier = ">=8.0" },
+]
 
 [[package]]
 name = "narwhals"
