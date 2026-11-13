@@ -140,8 +140,15 @@ def git_out(args: list[str]) -> str:
 
 
 def changed_files() -> list[str]:
+    """바뀐 파일 이름들. 상태 칸(`XY `)을 떼고 돌려준다.
+
+    자리로 자르지 않는다(`line[3:]`). `git_out` 이 앞뒤 공백을 떼기 때문에, 첫 줄이
+    ` M ROADMAP.md` 처럼 **공백으로 시작하면 한 칸 밀려** `OADMAP.md` 가 된다.
+    그러면 `check()` 가 ROADMAP.md 를 못 알아보고 종료할 때마다 헛경고를 냈다 (2026-11-13).
+    이름에 공백이 있으면 git 이 따옴표로 묶으므로 **한 번만** 쪼개면 된다.
+    """
     out = git_out(["git", "status", "--porcelain"])
-    return [line[3:].strip().strip('"') for line in out.splitlines() if line.strip()]
+    return [line.split(maxsplit=1)[-1].strip('"') for line in out.splitlines() if line.strip()]
 
 
 def check() -> int:

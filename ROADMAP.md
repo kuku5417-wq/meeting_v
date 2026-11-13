@@ -6,7 +6,7 @@
 
 ## 진행율
 <!-- progress:start -->
-**전체 진행율 60%** (25/42) ██████░░░░
+**전체 진행율 58%** (25/43) ██████░░░░
 현재 단계: P0. 정본 정리
 
 | 단계 | 진행 | 진행율 | 막대 |
@@ -15,7 +15,7 @@
 | P1. 안전장치 (3일차 교육 적용) | 5/8 | 62% | ██████░░░░ |
 | P2. 기반 | 5/5 | 100% | ██████████ |
 | P3. 화면 | 4/8 | 50% | █████░░░░░ |
-| P4. 검증 | 0/6 | 0% | ░░░░░░░░░░ |
+| P4. 검증 | 0/7 | 0% | ░░░░░░░░░░ |
 | P5. 사내망 고정본 | 0/3 | 0% | ░░░░░░░░░░ |
 <!-- progress:end -->
 
@@ -66,7 +66,7 @@ flowchart LR
 - [x] 기준정보 명세 `SPEC.md` (호선 4층 구조, `stage` 5종, 검증 7규칙)
 - [x] 기준정보 CSV 15종 99행 + `_check.py`
 - [x] 화면 시안 v2 (`docs/_시안/` HTML·README 명세)
-- [x] 에이전트 3종 (`spec-writer`·`code-gen`·`spec-guard`)
+- [x] 에이전트 **6종** (`spec-writer`·`code-gen`·`test-writer`·`spec-guard`·`code-reviewer`·`ui-reviewer`) — 처음 3종, `ui-reviewer` 는 디자인 묶음(11-13), `test-writer`·`code-reviewer` 는 에이전트 묶음(11-13)
 - [x] 저장소 커밋 — `.gitignore`·안전장치·`ROADMAP.md`를 `main`에 병합하고 `origin/main`에 push (`bdebcc9..1f83269`). 미push 상태였던 이전 3커밋(`6720745`·`f27d8e4`·`45e4f0f`)도 함께 올라갔다
 - [x] `SPEC.md` §9 정해야 할 것 4건 확정 (2026-11-12) — 9-1 약호 `174km3 LNG` 꼴 / 9-2 적재량까지 유지 / 9-3 계약 순서 + 대책 반영은 호선 ID로 / 9-4 단계 4개 + 일정에서 계산(§10 선행). 결정 브리핑: https://claude.ai/artifact/AGSoCiE1p1GLDdY1jhPXsD
 - [x] `SPEC.md` §10 호선 이벤트 일정 — 받는 표(`milestone` 하나)·칸 이름(헤더 그대로)·이벤트 17종·계산 규칙 전부 확정 (2026-11-12)
@@ -82,7 +82,7 @@ flowchart LR
 - [x] 권한 규칙 `.claude/settings.json` 적용 (allow·ask·deny 3층)
 - [x] 가드 훅 적용 — `node .claude/hooks/guard-test.js` 26건 FAIL 0
 - [x] 에이전트 출력 형식 보완 (쓰지 않을 때, 확인하지 못한 것, 판정)
-- [x] 로드맵 훅 동작 확인 (세션 시작 요약, 종료 시 미갱신 알림)
+- [x] 로드맵 훅 동작 확인 (세션 시작 요약, 종료 시 미갱신 알림) — 2026-11-13 에 `check` 의 헛경고(파일 이름이 한 칸 밀려 잘리던 것)를 고쳤다
 - [ ] 뚫어 보기 5가지 기록 — 아래 "뚫어 보기 기록" 표를 채운다
 - [ ] 에이전트 **6개** 확인 (`spec-writer`·`code-gen`·`test-writer`·`spec-guard`·`code-reviewer`·`ui-reviewer`) — 2026-11-13 묶음으로 `test-writer`·`code-reviewer` 가 들어왔다
 - [ ] `/slice` 스킬로 한 바퀴 (반려 → 수정 → 통과 기록). 묶음은 "S0 한 바퀴"라고 적었지만 S0 는 이미 끝났으므로 **S7 에서 처음 쓴다**
@@ -108,6 +108,7 @@ flowchart LR
 
 ### P4. 검증
 
+- [ ] **테스트를 돌릴 수단부터 만든다** — `pyproject.toml` 에 `pytest` 가 없고 `tests/` 도 없다. 그런데 `test-writer`·`code-reviewer` 는 둘 다 `uv run pytest` 를 전제한다. **이것부터 하지 않으면 `/slice` 가 2번 칸에서 멈춘다**
 - [~] 슬라이스마다 `/slice` 로 진행 — **`test-writer` 테스트 통과**, `spec-guard`·**`code-reviewer`** `판정: 통과`. 지금까지는 `spec-guard` 만 돌렸다(S1~S6 소급 1회, 2026-11-12 **반려 14건** → 12건 처리, 2건은 2026-11-13에 결정으로 닫음). **S7부터 `/slice` 로 한 바퀴씩 돈다**
 - [ ] **S0~S6 에는 테스트가 없다** — `test-writer` 가 그때 없었고 `tests/` 자체가 없다. S7 을 `/slice` 로 돌린 뒤, 끝난 슬라이스에 테스트를 **소급해서** 붙일지 정한다
 - [ ] 화면 슬라이스마다 `ui-reviewer` `판정: 통과`, `design_check` **0건**
@@ -383,7 +384,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
    > 정적 제공을 끄면 글꼴만 안 받아지고 대체 사슬(맑은 고딕)로 떨어진다. 화면은 그대로 뜬다.
    > 저장소가 840KB 늘었고 `docs/_시안/` 것과 같은 파일이라 중복이다 — 시안은 참조용이라 그대로 둔다.
 
-**남은 것** — SD 에서 할 일은 다 했다. 아래 컴포넌트 토큰만 남는다.
+**남은 것** — SD 에서 할 일은 **다 했다**. 아래 [제안]만 그 화면을 손댈 때 함께 본다.
 
 **`ui-reviewer` 1차 (2026-11-13) — 판정: 반려 (필수 10건)**
 
@@ -398,7 +399,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
 지적이 빗나간 것 1건 — `static/tokens.css` 미추적. 점검이 커밋 직전 상태를 봤다. `9284dd6` 에 들어가 있다
 
-남은 것 — 아래 컴포넌트 토큰 4건이 그대로 필수로 남아 있다. [제안] 14건은 그 화면을 손댈 때 함께 본다
+남은 것 — 컴포넌트 토큰 4건은 `d059387` 에서, 재점검 반려 5건은 `adf6d2a` 에서 끝났다. [제안] 14건만 그 화면을 손댈 때 함께 본다
 (줄일 수 있는 요소 12개: 사이드바 개발 진단 4·상태 지표 5·고르는 방식 중복·기능 번호 라벨)
 
 **컴포넌트 토큰** — ✅ 2026-11-13 맞췄다. 방식은 `views/ui.py` 한 곳에 두고 화면은 부르기만 한다.
@@ -436,7 +437,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 - 「기록하고 다음」이 실제로 다음으로 넘어가지 않는다 (원장은 제자리, 기록함은 그 메모를 연다)
 - 「일괄 정리」에 전체 선택이 없다
 
-**언제 하나** — 5와 위 [제안]은 그 화면을 손댈 때 함께 한다.
+**언제 하나** — 위 [제안]은 그 화면을 손댈 때 함께 한다.
 
 ## 뚫어 보기 기록 (P1)
 
@@ -450,7 +451,10 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 4 | Python으로 열어서 저장하기 | | |
 | 5 | 다른 폴더에서 고친 뒤 옮기기 | | |
 
-**실제 세션에서 막힌 사례 1건** (2026-11-12): `.gitignore` 확인용 `git check-ignore` 명령이 차단됐다. 명령문에 보호 경로 이름과 읽기 동사(`head`)가 함께 들어가 "비밀·보호 경로를 읽는 명령"으로 판정. 읽기 동사를 빼서 통과. → 가드가 의도대로 동작하며, 보호 경로 이름을 적기만 해도 걸린다는 뜻이다.
+**실제 세션에서 막힌 사례 2건**
+
+1. (2026-11-12) `.gitignore` 확인용 `git check-ignore` 명령이 차단됐다. 명령문에 보호 경로 이름과 읽기 동사(`head`)가 함께 들어가 "비밀·보호 경로를 읽는 명령"으로 판정. 읽기 동사를 빼서 통과. → 가드가 의도대로 동작하며, 보호 경로 이름을 적기만 해도 걸린다는 뜻이다.
+2. (2026-11-13) AI 값·사람 값 기록을 확인하려던 파이썬 한 줄 명령이 차단됐다. 스크립트 **변수 이름이 `raw`** 여서 보호 경로 `data/raw` 로 잡힌 **오탐**이다. 변수 이름을 바꿔 피하지 않고(`CLAUDE.md` §7 — 막히면 우회하지 않는다) 앱 화면으로 돌아가 확인했다. → 가드가 **글자만 보고 판단**한다는 뜻이다. 규칙을 "경로처럼 쓰인 자리"만 보게 좁힐지는 뚫어 보기 5가지를 돌릴 때 함께 정한다.
 
 ## 작업 실적 로그
 
@@ -467,14 +471,14 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
-| 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 | |
-| 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 | |
-| 2026-11-13 | P0 | **미결 A·B 닫음** — 회의자료는 `meeting` 하나로, `hull.stage` 는 볼 때마다 계산. `requirements.md` §2 에 열려 있는 결정이 없어져 S7 이 열렸다 | 13척 중 12척이 DB 값과 일치, SN2512 만 날짜 때문에 다름(의도한 결과) | |
-| 2026-11-13 | SD 6차 | `ui-reviewer` 2차 반려 5건 수정 — 여는 버튼에 「열기」 글자(`[9,2]`), 이슈 등록 아이콘 `add` 통일, 설정 삭제 **되돌리기**(위젯 판 번호로 재삭제 막음), 기록함이 새 메모를 열도록 목록 선택도 옮김·자동 선택 끔, 카드 글 `html.escape`(`ui.card()` 신설), `st.toast` 아이콘 글꼴(`stToastDynamicIcon`) | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 앱에서 5건 모두 확인 — 「열기」 버튼, `+ 이슈로 등록`, 지우고 되돌려 99행 복구, 새 메모가 열리고 목록 맨 위에 파란 막대, `<점검>` 이 글자 그대로 보임 | |
-| 2026-11-13 | SD 5차 | 컴포넌트 토큰 4건을 맞췄다 — `views/ui.py` 신설(`card_list`·`filter_pills`·`search_box`·`check_list`), 원장·기록함 목록을 카드로, 거르기를 칩+찾기로, 일괄을 체크 칸으로, 저장을 자동 저장으로, 주 버튼을 화면당 하나로. 상태 지표 5개 제거, 탭·화면의 기능 번호 제거, 후보 중복 등록 막음 | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 화면 4개 임포트 통과 / 앱에서 카드 목록·파란 막대·칩 메타·건수 칩 확인 | |
-| 2026-11-13 | SD 4차 | 글꼴 서브셋을 앱에 넣음 — `static/fonts/` woff2 5개 + OFL 2건, `static/fonts.css`, `enableStaticServing` | `document.fonts` 로 Meeting Sans KR 400·600 **loaded** 확인, `fonts.check('400 14px "Meeting Sans KR"')` true / `design_check` 0건 / 진단 4개 EXIT=0 / 저장소 +840KB | |
-| 2026-11-13 | SD 3차 | `ui-reviewer` 1차 반려(필수 10건) 중 6건 수정 — 경보 칩 색·완료 표시·비활성 도움말·스피너·근거 노란 바탕·「종결」 선택 제한 | `design_check` 0건 / 진단 4개 EXIT=0 / 앱에서 사이드바 흰색(`rgb(255,255,255)`)·`--warn-soft` `#fbefd9` 로 풀림·예외 없음 / `_token_for` 가 "일정 임박 D+28"→signal, "기한 지남 D-72"→danger 로 맞음 | |
-| 2026-11-13 | SD 2차 | 흰 사이드바, `static/tokens.css` 신설(`theme.py`는 읽기만), `--sep`·`--warn-soft` 신설, 이모지 11건 → `:material/` 아이콘 | `design_check` **0건** / 진단 4개·`_check.py` EXIT=0 / 앱에서 흰 사이드바·지금 메뉴 강조·아이콘 글리프 확인 | |
+| 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 |`a6c9433` |
+| 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 |`7989efa` |
+| 2026-11-13 | P0 | **미결 A·B 닫음** — 회의자료는 `meeting` 하나로, `hull.stage` 는 볼 때마다 계산. `requirements.md` §2 에 열려 있는 결정이 없어져 S7 이 열렸다 | 13척 중 12척이 DB 값과 일치, SN2512 만 날짜 때문에 다름(의도한 결과) |`6b068be` |
+| 2026-11-13 | SD 6차 | `ui-reviewer` 2차 반려 5건 수정 — 여는 버튼에 「열기」 글자(`[9,2]`), 이슈 등록 아이콘 `add` 통일, 설정 삭제 **되돌리기**(위젯 판 번호로 재삭제 막음), 기록함이 새 메모를 열도록 목록 선택도 옮김·자동 선택 끔, 카드 글 `html.escape`(`ui.card()` 신설), `st.toast` 아이콘 글꼴(`stToastDynamicIcon`) | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 앱에서 5건 모두 확인 — 「열기」 버튼, `+ 이슈로 등록`, 지우고 되돌려 99행 복구, 새 메모가 열리고 목록 맨 위에 파란 막대, `<점검>` 이 글자 그대로 보임 |`adf6d2a` |
+| 2026-11-13 | SD 5차 | 컴포넌트 토큰 4건을 맞췄다 — `views/ui.py` 신설(`card_list`·`filter_pills`·`search_box`·`check_list`), 원장·기록함 목록을 카드로, 거르기를 칩+찾기로, 일괄을 체크 칸으로, 저장을 자동 저장으로, 주 버튼을 화면당 하나로. 상태 지표 5개 제거, 탭·화면의 기능 번호 제거, 후보 중복 등록 막음 | `design_check` 0건 / 진단 4개·`_check.py` EXIT=0 / 화면 4개 임포트 통과 / 앱에서 카드 목록·파란 막대·칩 메타·건수 칩 확인 |`d059387` |
+| 2026-11-13 | SD 4차 | 글꼴 서브셋을 앱에 넣음 — `static/fonts/` woff2 5개 + OFL 2건, `static/fonts.css`, `enableStaticServing` | `document.fonts` 로 Meeting Sans KR 400·600 **loaded** 확인, `fonts.check('400 14px "Meeting Sans KR"')` true / `design_check` 0건 / 진단 4개 EXIT=0 / 저장소 +840KB |`bfbe884` |
+| 2026-11-13 | SD 3차 | `ui-reviewer` 1차 반려(필수 10건) 중 6건 수정 — 경보 칩 색·완료 표시·비활성 도움말·스피너·근거 노란 바탕·「종결」 선택 제한 | `design_check` 0건 / 진단 4개 EXIT=0 / 앱에서 사이드바 흰색(`rgb(255,255,255)`)·`--warn-soft` `#fbefd9` 로 풀림·예외 없음 / `_token_for` 가 "일정 임박 D+28"→signal, "기한 지남 D-72"→danger 로 맞음 |`2d22495` |
+| 2026-11-13 | SD 2차 | 흰 사이드바, `static/tokens.css` 신설(`theme.py`는 읽기만), `--sep`·`--warn-soft` 신설, 이모지 11건 → `:material/` 아이콘 | `design_check` **0건** / 진단 4개·`_check.py` EXIT=0 / 앱에서 흰 사이드바·지금 메뉴 강조·아이콘 글리프 확인 |`9284dd6` |
 | 2026-11-12 | P3 S6 | `modules/extract.py`·`views/inbox.py` 신설, `app.py`에 기록함 화면 | `locate` doctest 3건 / **근거 규칙(§6-3)이 코드로 막힌다** — 지어낸 후보(메모에 없는 `quote`)와 제목 없는 후보를 버리고 왜 버렸는지 화면에 적는다 / 등록 시 `source_span` 4칸 + `ai_field_log` 기록 / 사외망에서는 `LLMNotConfigured` → 직접 적기로 강등, 사람이 적은 값은 근거 구간 없이 등록 / 진단 4개 EXIT=0 / 앱에서 기록함 렌더 | |
 | 2026-11-12 | P3 S5 (2/2) | `modules/milestone.py` 신설(§10-2 계산), `data/samples/mirror/` 샘플 2종, `config/paths.py`에 `MIRROR_DIR`. F5 초안·사진, F21 경보, F23 일괄을 `issues.py`·`ledger.py`에 추가. **§9-4 적용 완료** — `hull.stage` 11척을 계산값으로 바꾸고 `_check.py` `STAGES`에서 옛 표기 2개 제거 | 13호선 단계 계산이 5개 어휘를 모두 냄 (안벽 5·시운전 3·Layup 2·인도선 2·앵카링 1) / `_check.py` 규칙 7개 통과 / F21 `ISS-2026-0001` DL 목표 → 「일정 임박 D+28」 / F5 초안 저장·사진 `data/photos/89/<sha>.png` / F23 2건 일괄 변경 + 이력 기록 / 진단 4개 EXIT=0 / 앱에서 4개 탭 렌더 | |
 | 2026-11-12 | P3 S5 (1/2) | 운영 표 16종 선언(`models.py` 15→31표), `config/paths.py`에 사진 폴더 창구, `modules/issues.py`·`views/ledger.py` 신설, `app.py`에 원장 화면 | F3 지식 매핑이 실제로 걸림 — `2511`→`SN2511`(ensure_sn), `DG2`→`EQ-SN2511-GE-02`·`C/P #3`→`EQ-SN2514-CP-03`·`배기온도 편차`→`SY-EXH-DEV`(별칭), 기준정보에 없는 `9999`는 0/5 「미등록」 / ID 발급 `ISS-2026-0001~0003` / 주차 `2026-W46` 자동 생성 / F4 주차별 진행 한 줄 / `check_db` EXIT=0(기준정보 15표 그대로, 운영 16표는 별도로 보고) / 앱에서 그리드·등록·상세 렌더 | |
@@ -497,6 +501,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | **`config/settings.py`의 비밀값 읽기 시점 수정** | 처음에는 `st.secrets` 속성 접근을 `try`로 감쌌는데, Streamlit은 접근이 아니라 **읽는 시점**에 `StreamlitSecretNotFoundError`를 던진다. 그래서 `secrets.has()` 호출이 그대로 터졌다. `st.secrets.get(...)` 호출 자체를 감싸도록 고쳤다 — 사외망에서 `secrets.toml`이 없는 것이 정상 상태이므로 터지지 않고 기본값을 줘야 한다 |
 | 2026-11-13 | **디자인 묶음이 `ROADMAP.md`를 덮어썼다 — 커밋본에서 되살려 합쳤다** | 묶음의 `ROADMAP.md`(85줄)가 교육장 원본 골격이라, 이 저장소에서 쌓은 374줄(실적 로그·변경 기록·§9·§10·P2 상세·SD·뚫어 보기)과 **S-1~S6 완료 표시**가 통째로 날아갔다. `d55037f` 에서 복원하고 묶음에만 있던 디자인 항목(P0 2개·P4 1개)을 옮겨 붙였다. **첫날 경고한 그대로였다** — 다음에 묶음을 받을 때도 `ROADMAP.md`는 빼고 받는다 |
 | 2026-11-13 | **에이전트 묶음이 `ROADMAP.md`를 또 덮었다 (세 번째) — `HEAD` 에서 되살렸다** | 묶음의 `ROADMAP.md`(89줄·20%)는 **11-12 교육장 판**이라 S-1~S6·SD·§2 결정·실적 로그 499줄이 통째로 날아갔다. `git show HEAD:ROADMAP.md`(`7989efa`)로 되살리고, 묶음에만 있던 항목(P1 2개·P4 2개)을 손으로 더했다. **쪽지로는 세 번 다 못 막았다.** 앞으로는 ① 푸는 쪽에서 `ROADMAP.md` 를 빼고 ② 그래도 덮였으면 **먼저 `git show HEAD:ROADMAP.md > ROADMAP.md` 로 되살린 뒤** 묶음 판에만 있는 줄을 옮겨 붙인다. 묶음 판을 손보는 쪽은 잃는 것이 훨씬 많다 |
+| 2026-11-13 | **`roadmap.py check` 가 헛경고를 내던 것을 고쳤다** | `changed_files()` 가 `git status --porcelain` 줄을 **자리로**(`line[3:]`) 잘랐는데, `git_out` 이 출력 앞뒤 공백을 떼는 바람에 첫 줄이 ` M ROADMAP.md` 면 한 칸 밀려 `OADMAP.md` 가 됐다. 그래서 ROADMAP.md 를 고쳐 놓고도 종료할 때마다 "갱신되지 않았다" 가 떴다. 한 번만 쪼개 이름을 얻도록 바꿨다 |
 | 2026-11-13 | **에이전트가 3종 → 6종, `/slice` 스킬 신설** | 2026-11-13 묶음. `test-writer`(슬라이스 테스트)·`code-reviewer`(diff·테스트 검토)가 들어와 **테스트와 코드 리뷰 공백**이 메워졌다. `code-gen` 은 이제 테스트를 직접 쓰지 않는다. `/slice` 가 code-gen → test-writer → (spec-guard·code-reviewer·ui-reviewer 동시) → 반려 2회까지 수정 순서를 묶는다. S0~S6 은 이 장치 없이 만들어져 **테스트가 없다**(P4) |
 | 2026-11-13 | **흰 사이드바·주 색 `#0963c4` 확정** (안 B) | `docs/디자인_규칙.md` 1절. 시안 v2m 의 네이비 사이드바를 따르지 않는다. SD 1차가 네이비로 만들어져 있어 다시 해야 한다 |
 | 2026-11-12 | **`check_libs.py`는 S0 전까지 `EXIT=1`이 정상** | 필수 `streamlit`·`sqlalchemy`·`pandas`가 아직 설치되지 않았다(`pyproject.toml`이 S0 산출물). S-1 완료 판정은 "크래시 없이 끝남 + `check_data` EXIT=0"이고, `check_libs` EXIT=0은 **S0 완료 판정**이다. 선택 라이브러리(`st_aggrid`·`drawable_canvas`·`pptx`)는 없어도 오류로 세지 않는다 — `code-gen.md` §4⑦ 강등 경로 전제 |
@@ -504,5 +509,4 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 ## 범위 밖 / 미결
 
 - ~~`requirements.md` §2 미결~~ — **2026-11-13에 전부 닫혔다.** `slide_object.props` 는 JSON 통칸으로, 나머지 운영 표는 §1-2-2 에 채웠고, 회의자료 표와 `hull.stage` 재계산도 정했다. S7 을 막는 것은 이제 없다 (S7 안에서 정할 것 하나는 「다음 할 일」 1번).
-- `SPEC.md` §9 정해야 할 것 4건은 **P2 S1**(모델 선언) 전에 확정되는 편이 좋다. 모델 약호·`series_no` 기준이 표 칸에 직접 걸린다.
 - 훅·권한 규칙이 실제로 올라갔는지는 터미널에서 `claude`를 다시 띄워 `/hooks`·`/permissions`로 확인한다. 이 데스크톱 앱에는 두 대화창이 없다.
