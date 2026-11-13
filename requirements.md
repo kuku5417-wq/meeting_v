@@ -40,8 +40,8 @@
 
 | 테이블 | 주요 칸 | 근거 |
 |---|---|---|
-| `meeting_deck` | `id, kind(dept/share/exec), issue_id(FK, null 허용), status(draft/submitted), created_at, updated_at` | v2e-studio URL `?kind=dept·share·exec`. `status`는 ㉛(제출) 범위 — "제출됨/초안"만, 서버 상태 전파·잠금 없음(README "제출" 절) |
-| `deck_slide` | `id, deck_id(FK), seq(정수, 순서), form(cover/line/card/... — `FORMS` 딕셔너리 키), hull_text, issue_id(FK, null 허용)` | `slides[]`의 `id·form·hullText·issueId`. `seq`는 바닥띠 "n / total" 재계산(`syncFooters()`)의 근거 — 슬라이드 삭제·추가 때마다 전체 재계산 |
+| ~~`meeting_deck`~~ → **`meeting`** (§1-2-2) | — | **2026-11-13 결정: 회의자료는 `meeting` 하나로 만든다.** `meeting_deck` 은 쓰지 않는다. v2e-studio URL 의 `?kind=dept·share·exec` 는 `meeting.kind` 로 읽고, 시안의 「제출」은 `meeting.status` 다. 판(`version`)·호선 회의·취합이 `meeting` 에만 있어 F8·F10 이 여기서만 선다 |
+| `deck_slide` | `id, deck_id(FK → `meeting.id`), seq(정수, 순서), form(cover/line/card/... — `FORMS` 딕셔너리 키), hull_text, issue_id(FK, null 허용)` | `slides[]`의 `id·form·hullText·issueId`. `seq`는 바닥띠 "n / total" 재계산(`syncFooters()`)의 근거 — 슬라이드 삭제·추가 때마다 전체 재계산 |
 | `slide_object` | `id, slide_id(FK), type(strip/text/image/shape), locked(bool), z_order(정수), x, y, w, h, props(JSON)` | `objs[]`. `objs[0]`=머리띠, `objs[1]`=바닥띠 불변식은 `locked=true` + `z_order` 최솟값 2개로 표현(코드처럼 배열 인덱스에 의존하지 않는다 — DB에는 순서 보장이 없기 때문) |
 
 **props 설계**: 지금은 JSON 통칸으로 둔다(인터뷰 2026-11-11 확정). 타입별 칸(텍스트 서식·이미지 필터·도형 색 등)으로 쪼갤지는 `code-gen` S1(모델) 구현 시점에 결정 — v2e-studio README "개체 타입"·"편집 가능한 개체" 표(각 타입별 속성 목록)가 그 쪼갤 칸의 근거가 된다.
@@ -224,36 +224,23 @@ F22는 사내망 고정본(P5)에서만 가능하다.
 
 ## §2. 정해야 할 것 (확인 필요 목록)
 
-> 2026-11-12 오전에 범위 결정 4건을 닫았는데, 그날 오후 `spec-guard` 검사에서
-> **두 건이 다시 열렸다.** 아래 둘은 **S7 시작 전에** 닫아야 한다.
+> 2026-11-12 오전에 범위 결정 4건을 닫았는데, 그날 오후 `spec-guard` 검사에서 **두 건이 다시 열렸다.**
+> 그 둘은 **2026-11-13에 닫았다.** S7(회의자료)을 막는 결정은 이제 없다.
 
 ### 열려 있는 결정
 
-**A. 「회의자료」를 어느 표로 만드는가** — *S7을 막는다*
+**없다.**
 
-같은 것을 가리키는 표가 **둘** 적혀 있다. 내가 §1-2-2를 채우면서 생긴 모순이다.
+### 2026-11-13에 정한 것
 
-| | 출처 | 칸 |
-|---|---|---|
-| `meeting_deck` (§1-2) | v2e-studio 시안 | `kind`(dept/share/exec) · `issue_id` · `status`(draft/submitted) |
-| `meeting` (§1-2-2) | 원본 `docs/03` | `kind`(dept/share/exec/**hull/review**) · `status`·`version`·`order_json`·`hull_id` |
+| # | 결정 | 왜 | 반영 |
+|---|---|---|---|
+| A | **회의자료는 `meeting` 하나로 만든다.** `meeting_deck` 은 쓰지 않는다 | 판(`version`)·호선 회의·취합이 `meeting` 에만 있다. 판이 없으면 F8(사실 되먹임)·F10(취합)을 세울 수 없다. 표 이름을 원본 `docs/03` 그대로 쓰기로 한 것과도 맞는다 | §1-2 의 `meeting_deck` 줄을 `meeting` 으로 돌림. v2e-studio 의 `?kind=` 는 `meeting.kind`, 시안의 「제출」은 `meeting.status` 로 읽는다. `deck_slide.deck_id` 는 `meeting.id` 를 가리킨다 |
+| B | **`hull.stage` 는 볼 때마다 계산한다.** DB 에는 쓰지 않는다 | 일정이 바뀌면 그 자리에서 따라간다. 일정 경보(F21)가 이미 같은 방식이다 — "날짜는 저장하지 않고 볼 때마다 다시 잡는다" | `views/settings.py` `COMPUTED` — 보일 때 `milestone.stage()` 로 그리고, 저장할 때는 DB 값으로 되돌린다. `stage` 칸 잠금은 그대로. `milestone._read()` 에 파일 시각 기준 캐시를 뒀다 |
 
-`meeting` 쪽이 넓다 — 호선별·리뷰 회의와 **판(`version`)**이 있다. 판은 F8(사실 되먹임)·F10(취합)의 전제라
-`meeting_deck` 만으로는 그 둘을 만들 수 없다. 다만 v2e-studio 시안은 `meeting_deck` 모양으로 그려져 있다.
-**하나로 합칠지, 시안 쪽을 `meeting` 으로 바꿀지** 정해야 한다.
-
-**B. `hull.stage` 를 언제 다시 계산하는가**
-
-`SPEC.md` §3-3·§6은 "`milestone.py` 가 계산한다. 손으로 적지 않는다"고 적었는데,
-실제로는 **2026-11-12에 한 번 계산해 CSV에 박아 둔 스냅샷**이고 앱에 재계산 경로가 없다
-(`milestone.stage()` 를 부르는 코드가 하나도 없다). 규칙 자체는 코드에 그대로 들어가 있고
-13척 전부 CSV 값과 맞는 것은 확인했다. 선택지 셋이다.
-
-1. **볼 때마다 계산** — 원장·설정이 `stage` 를 보일 때 `milestone.stage()` 로 그린다. 일정이 바뀌면 바로 따라간다
-2. **재계산 버튼** — 설정 화면에서 사람이 눌러 DB 값을 새로 쓴다. 언제 바뀌었는지가 분명하다
-3. **스냅샷으로 둔다** — 그러면 §3-3·§6의 "계산한다"를 "기준일 스냅샷이다"로 고쳐야 한다
-
-지금은 설정 화면에서 `stage` 칸을 **잠가** 두었다(손으로 못 고친다). 어느 쪽이든 그 잠금은 유지된다.
+> **A 의 남은 몫** — `deck_slide`·`slide_object`(시안 유래)와 `report_item`(원본 유래)이 둘 다 "회의자료의 한 장"을
+> 가리킨다. 어느 쪽이 장의 정본인지는 **S7 에서 화면을 그릴 때** 본다. 표를 선언하기 전에 정하면 되고, A 의 결정이
+> 그 선택을 좁히지는 않는다.
 
 ### 2026-11-12에 정한 것
 

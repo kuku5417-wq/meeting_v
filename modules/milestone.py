@@ -38,13 +38,25 @@ DEFAULT = "안벽기간"
 LAYUP = "Layup"
 
 
+# 읽은 것을 파일이 바뀔 때까지 들고 있는다. `stage` 를 **볼 때마다 계산**하기로 했으므로
+# (2026-11-13 결정, `requirements.md` §2) 한 화면에서 호선 수만큼 불린다.
+# 파일 시각이 바뀌면 다시 읽으니 전환 지점의 뜻은 그대로다.
+_CACHE: dict[str, tuple[float, list[dict[str, str]]]] = {}
+
+
 def _read(name: str) -> list[dict[str, str]]:
     """사내망 전환 지점 — 여기만 parquet 읽기로 바꾼다."""
     path = Path(MIRROR_DIR) / f"{name}.csv"
     if not path.exists():
         return []
+    stamp = path.stat().st_mtime
+    hit = _CACHE.get(name)
+    if hit is not None and hit[0] == stamp:
+        return hit[1]
     with path.open(encoding="utf-8-sig", newline="") as f:
-        return [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f)]
+        rows = [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f)]
+    _CACHE[name] = (stamp, rows)
+    return rows
 
 
 def _date(value: str) -> datetime.date | None:

@@ -18,7 +18,7 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import select
 
-from modules import seed
+from modules import milestone, seed
 from modules.db import session
 
 TABLES: dict[str, type] = dict(seed.SEED_ORDER)  # 순서 = FK 순서
@@ -26,6 +26,10 @@ TABLES: dict[str, type] = dict(seed.SEED_ORDER)  # 순서 = FK 순서
 # 사람이 고치면 안 되는 칸. `hull.stage` 는 호선 이벤트 일정에서 **계산되는 값**이라
 # 손으로 적으면 일정과 어긋난다 (`SPEC.md` §3-3·§10-2).
 READ_ONLY: dict[str, list[str]] = {"hull": ["stage"]}
+
+# **볼 때마다 계산하는 칸** (2026-11-13 결정, `requirements.md` §2-B).
+# 화면에는 계산값을 보이고, DB 에는 쓰지 않는다 — 일정이 바뀌면 그 자리에서 따라간다.
+COMPUTED: dict[str, dict[str, Any]] = {"hull": {"stage": lambda hull_id: milestone.stage(hull_id)[0]}}
 
 
 def _pk(cls: type) -> tuple[str, ...]:
@@ -47,6 +51,36 @@ def _read(cls: type) -> pd.DataFrame:
 
 def _key(row: dict[str, Any], pk: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(str(row.get(c, "") or "").strip() for c in pk)
+
+
+def _shown(name: str, cls: type, raw: pd.DataFrame) -> pd.DataFrame:
+    """보여 줄 표 — 계산 칸은 **지금 계산한 값**으로 덮는다. 일정이 없으면 DB 값을 그대로 둔다."""
+    rules = COMPUTED.get(name)
+    if not rules or raw.empty:
+        return raw
+    pk = _pk(cls)[0]
+    out = raw.copy()
+    for i, row in out.iterrows():
+        for col, fn in rules.items():
+            value = fn(str(row[pk]))
+            if value:
+                out.at[i, col] = value
+    return out
+
+
+def _as_stored(name: str, cls: type, raw: pd.DataFrame, after: pd.DataFrame) -> pd.DataFrame:
+    """편집 결과에서 계산 칸을 **DB 값으로 되돌린다.** 화면에 보인 계산값이 DB 에 굳지 않게."""
+    rules = COMPUTED.get(name)
+    if not rules or after.empty:
+        return after
+    pk = _pk(cls)
+    stored = {_key(r, pk): r for r in raw.to_dict("records")}
+    out = after.copy()
+    for i, row in out.iterrows():
+        src = stored.get(_key(row.to_dict(), pk))
+        for col in rules:
+            out.at[i, col] = src[col] if src else ""  # 새로 더한 줄은 빈 칸 — 계산값은 저장하지 않는다
+    return out
 
 
 def _restore(name: str, cls: type, rows: list[dict[str, Any]]) -> None:
@@ -123,7 +157,8 @@ def render() -> None:
     if locked:
         st.caption(
             "잠긴 칸: " + " · ".join(f"`{c}`" for c in locked)
-            + " — 호선 이벤트 일정에서 계산되는 값이라 손으로 고치지 않는다 (`SPEC.md` §3-3)."
+            + " — 호선 이벤트 일정에서 계산되는 값이라 손으로 고치지 않는다 (`SPEC.md` §3-3). "
+            "**볼 때마다 다시 계산해서 보인다** — DB 값이 아니라 지금 일정으로 그린 값이다."
         )
 
     # 되돌리기를 하면 표 위젯이 기억하는 「지운 줄」을 비워야 한다 — 그대로 두면 되살린 줄을
@@ -131,7 +166,7 @@ def render() -> None:
     ver = int(st.session_state.get(f"ver_{name}", 0))
     before = _read(cls)
     after = st.data_editor(
-        before,
+        _shown(name, cls, before),
         num_rows="dynamic",
         use_container_width=True,
         disabled=locked,
@@ -140,7 +175,7 @@ def render() -> None:
 
     # 자동 저장 — 저장 버튼을 두지 않는다 (디자인_규칙 §3 "저장").
     # 고치면 Streamlit 이 다시 돌고, 그때 바뀐 줄만 쓴다. 같으면 아무것도 쓰지 않는다.
-    done, gone = _save(name, cls, before, after)
+    done, gone = _save(name, cls, before, _as_stored(name, cls, before, after))
     if any(done.values()):
         st.toast(
             f"{name}: 추가 {done['added']} · 수정 {done['changed']} · 삭제 {done['removed']}",
