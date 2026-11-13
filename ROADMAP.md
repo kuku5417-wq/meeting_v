@@ -24,8 +24,9 @@
 1. **P3 S7 — 회의자료. `/slice S7` 로 돈다.** `views/meeting.py`·`modules/meetings.py` (F6~F10 F12 F13 F20).
    가장 큰 화면이고, **`/slice` 를 처음 쓰는 슬라이스**다 (code-gen → test-writer → spec-guard·code-reviewer·ui-reviewer).
    **표현은 `report_item`, 사실은 `block`** 경계가 F8의 전제다. 표는 아직 선언하지 않았다.
-   먼저 정할 것 하나: `deck_slide`·`slide_object`(시안 유래)와 `report_item`(원본 유래) 중
-   **어느 쪽이 "회의자료 한 장"의 정본인가** (`requirements.md` §2 A 아래 쪽지). 표를 선언하기 전에 정한다.
+   **한 장 = `report_item` 하나**로 정했다 (2026-11-13 §2-D). `deck_slide`·`slide_object` 는 선언하지 않는다 —
+   1차 회의자료는 **틀을 고르고 값을 고치는** 화면이고, 자유 배치는 S8 의 `.pptx` 내보내기로 넘긴다.
+   장 순서는 **위·아래 버튼** (§2-E).
 2. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
    S7 을 `/slice` 로 한 바퀴 돌려 본 뒤, 업무 규칙(종결 권한·상태 전이·`ensure_sn`·근거 없는 값 버리기)에
    테스트를 소급해서 붙일지 정한다.
@@ -474,6 +475,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-12 | P0 | 9-4 후속 — 단계 어휘·구간 확정(`인도선` 포함 5개), **샘플을 진행 호선으로 정리 24→13척**(설계·건조 9척 제외, 인도선 2척 유지), `_check.py` `STAGES`·규칙 7 어휘 교체, `check_data` 기대값 112→99행, §10에 정해진 것/막힌 것 분리 | `check_data` EXIT=0 (15표 99행) / `_check.py` EXIT=0 (호선 13건, 묶음 순번 SG-01 1·2·3 연속 유지) | |
 | 2026-11-12 | P0 | §10 완결 — `data_manager`의 `milestone` 하나만 헤더 그대로 미러, 이벤트 17종(`ACFROM`/`ACTO` 포함), 계산 규칙 확정. `requirements.md` §1-4에 이벤트 표 추가 | 출처 코드(`gen_milestone`의 `SELECT * FROM pjtevnt`) 확인 | |
 | 2026-11-12 | P2 S1 | `modules/models.py` 신설 — 기준정보 15표 선언 (`modules/__init__.py` 포함) | `import modules.models` 통과 / 선언 표 **15개** / `hull` **12칸** / `check_db`가 CSV 헤더 ↔ 모델 칸 대조 통과(칸 누락 0) / 진단 4개·`_check.py` 모두 기대대로 | |
+| 2026-11-13 | P3 | **S7 정본 결정** — 「회의자료 한 장」은 `report_item` 하나(§2-D), 장 순서는 위·아래 버튼(§2-E). 시안 v2e-studio 와 원본 `docs/03` 을 맞대 보고 정했다 | 원본 `docs/03` §회의 — `report_item` 을 「회의자료의 한 장」으로 정의, 형태·순서·요약·지표·기간 표가 거기 달려 있고 **슬라이드·개체 표는 원본에 없다** / 시안 v2e 는 1920×1080 절대 좌표 자유 캔버스이고 저장·요약·제출이 미구현 | |
 | 2026-11-13 | P4 | **테스트 수단 갖춤** — `pyproject.toml` 에 dev 묶음(pytest)·pytest 설정, `tests/`(README·`test_base_imports.py`·`test_base_doctests.py`). 명령을 `uv run python -X utf8 -m pytest` 로 정하고 `test-writer`·`code-reviewer` 의 명령도 맞췄다 | 19개 통과 / **일부러 예제를 틀리게 해서 실제로 반려되는 것까지 확인**(exit 1, 실패 줄의 한글 이름도 읽힘) / 예제가 0개인 모듈은 목록에서 빼 헛통과를 막음 | |
 | 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 |`a6c9433` |
 | 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 |`7989efa` |
