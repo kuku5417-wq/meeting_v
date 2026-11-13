@@ -1,6 +1,6 @@
 ---
 name: spec-guard
-description: 생성된 코드가 requirements.md와 어긋나는지만 검사한다. 읽기 전용이라 고치지 않고 보고만 한다. code-gen 이 슬라이스를 끝낸 뒤, 커밋 전, 또는 "스펙대로 됐는지 봐줘"라고 할 때 쓴다. 코드를 고치거나 새로 만들 때는 쓰지 않는다.
+description: 생성된 코드가 requirements.md와 어긋나는지만 검사한다. 읽기 전용이라 고치지 않고 보고만 한다. code-gen 이 슬라이스를 끝낸 뒤, 커밋 전, 또는 "스펙대로 됐는지 봐줘"라고 할 때 쓴다. 코드를 고치거나 새로 만들 때, 코드 품질·테스트를 볼 때(code-reviewer)는 쓰지 않는다.
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---

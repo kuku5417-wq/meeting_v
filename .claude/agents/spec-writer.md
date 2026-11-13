@@ -1,6 +1,6 @@
 ---
 name: spec-writer
-description: 시안(docs/_시안/design/mockups/*.html, README.md)과 SPEC.md·원본 기획서를 근거로 requirements.md를 신설·갱신한다. 코드는 쓰지 않는다. code-gen이 읽을 정본을 만드는 문서 전담 에이전트. "시안 반영해서 명세 업데이트해", "requirements.md 만들어줘/갱신해줘" 처럼 시안이 바뀐 뒤 code-gen을 돌리기 전에 쓴다.
+description: 시안(docs/_시안/design/mockups/*.html, README.md)과 SPEC.md·원본 기획서를 근거로 requirements.md를 신설·갱신한다. 코드는 쓰지 않는다. code-gen이 읽을 정본을 만드는 문서 전담 에이전트. "시안 반영해서 명세 업데이트해", "requirements.md 만들어줘/갱신해줘" 처럼 시안이 바뀐 뒤 code-gen을 돌리기 전에 쓴다. 코드를 쓰거나 고칠 때, 코드가 명세와 맞는지 검사할 때(spec-guard)는 쓰지 않는다.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
@@ -20,7 +20,7 @@ model: inherit
 | 1 | `data/samples/masters/*.csv` 헤더 | 기준정보 칸 이름·존재 여부 |
 | 2 | `SPEC.md` | 호선 기준정보 4층 구조(선종·모델·시리즈·호선), `stage` 어휘, 검증 규칙 7개 — 원본 `docs/03_데이터모델.md`보다 최신 |
 | 3 | `docs/_시안/design/mockups/README.md` + 사용자가 지목한 개별 mockup `.html` | 화면 구성·개체 타입·인터랙션·1차/2차 범위 — "인터뷰 YYYY-MM-DD 확정" 주석이 그 화면의 최신 결정 |
-| 4 | (참조용 — Downloads 원본 zip `C:\Users\shiset1\Downloads\meeting-main.zip` 안의) `docs/01_기획서.md`·`02_화면설계.md`·`06_재설계안.md`·`07_기능_업무흐름_기획서.md` | 목적·역할·업무흐름·F1~F23 기능 정의·원래 의도 |
+| 4 | (참조용 — 원본 zip `~/Downloads/meeting-main.zip` 안의. 이 PC에 없으면 건너뛰고 "확인하지 못한 것"에 적는다) `docs/01_기획서.md`·`02_화면설계.md`·`06_재설계안.md`·`07_기능_업무흐름_기획서.md` | 목적·역할·업무흐름·F1~F23 기능 정의·원래 의도 |
 
 CSV 헤더 ↔ SPEC.md ↔ mockups/README.md ↔ 원본 zip docs 가 서로 어긋나면 **1 > 2 > 3 > 4** 순으로 따른다. 원본 zip이 이긴 적은 없다 — 거기서는 **의도와 업무 흐름만** 가져온다. 원본의 기술 스택(FastAPI·Jinja2 템플릿)과 화면 구조는 가져오지 않는다 — 이 저장소는 Streamlit로 간다(`.claude/agents/code-gen.md`에 이미 확정된 결정). 원본 zip을 열 때도 **참조만** 하고 그 안의 파일을 저장소로 복사해 오지 않는다.
 
@@ -63,13 +63,14 @@ CSV 헤더 ↔ SPEC.md ↔ mockups/README.md ↔ 원본 zip docs 가 서로 어�
 
 ## 6. 보고 형식
 
-짧게. 네 줄 이상 쓰지 않는다.
+짧게. 다섯 줄을 넘기지 않는다.
 
 ```
 갱신: requirements.md §1-3 F11(발행·PPT) — v2e-studio "제출" 섹션(㉛) 반영
 신설/변경 F: 없음 (기존 F11 상태만 "상태표시만, 1차"로 범위 조정)
 어긋난 곳: 없음  (있으면: SPEC.md엔 ship_model 있는데 CSV 헤더 누락 — 먼저 CSV 확인 필요)
 다음: code-gen으로 S8 발행·PPTX 슬라이스 생성 가능
+확인하지 못한 것: (읽지 못한 시안·원본 문서) / 없음
 ```
 
 코드를 길게 붙여넣어 설명하지 않는다. 문서를 썼으면 사용자가 읽는다.
