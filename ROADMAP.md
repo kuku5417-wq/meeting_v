@@ -515,5 +515,7 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 
 ## 범위 밖 / 미결
 
+- **시안 v2e-studio 의 자유 캔버스 편집기는 다음에 만든다** (2026-11-13). 1차 회의자료는 원본 `docs/03` 그대로 `report_item` 으로 간다 (`requirements.md` §2-D·§1-2-3). 버린 것이 아니라 뒤로 미룬 것이고, 그때 `slide_object`(절대 좌표·색·격자)를 더해 **사실은 `report_item`, 배치는 `slide_object`** 로 나눈다.
+
 - ~~`requirements.md` §2 미결~~ — **2026-11-13에 전부 닫혔다.** `slide_object.props` 는 JSON 통칸으로, 나머지 운영 표는 §1-2-2 에 채웠고, 회의자료 표와 `hull.stage` 재계산도 정했다. S7 을 막는 것은 이제 없다 (S7 안에서 정할 것 하나는 「다음 할 일」 1번).
 - 훅·권한 규칙이 실제로 올라갔는지는 터미널에서 `claude`를 다시 띄워 `/hooks`·`/permissions`로 확인한다. 이 데스크톱 앱에는 두 대화창이 없다.
