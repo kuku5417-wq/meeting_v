@@ -48,7 +48,7 @@ def home() -> None:
     st.write("앱이 떴다. 이 화면은 S10에서 홈(F19)으로 바뀐다.")
     st.info(
         "기준정보(S1·S2)·사내 LLM 창구(S3)·설정(S4)·이슈 원장(S5)·기록함(S6)·"
-        "회의자료(S7)까지 와 있다. 다음은 **S8 발행·PPTX**. "
+        "회의자료(S7)·발행·PPTX(S8)까지 와 있다. 다음은 **S7-b 지표**·**S9 지식·챗봇**. "
         "단계와 진행율은 `ROADMAP.md`, 만들 것은 `requirements.md`.",
         icon=":material/flag:",
     )

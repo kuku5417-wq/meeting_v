@@ -7,6 +7,10 @@ sqlalchemy>=2.0
 pandas>=2.2
 python-pptx>=1.0
 
+# 공개 데모 전용 — 외부 LLM(Claude). **사내망에서는 이 줄을 지운다.**
+# CLAUDE.md §3·§6-9 의 예외다 (docs/데모_배포.md). 키가 없으면 앱은 「직접 적기」로 돈다.
+anthropic>=0.40
+
 # 선택 — 사외망에서 설치가 막힐 수 있다. 없으면 강등 경로를 쓴다 (code-gen.md §4⑦).
 #   st_aggrid 없음              → st.data_editor
 #   drawable_canvas 없음        → st.image + 좌표 수동 입력

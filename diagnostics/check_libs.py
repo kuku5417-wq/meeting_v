@@ -21,7 +21,8 @@ REQUIRED = [
 OPTIONAL = [
     ("st_aggrid", "표 고급 기능", "없으면 st.data_editor 로 강등 (Community 범위만 쓴다)"),
     ("streamlit_drawable_canvas", "사진 마킹", "없으면 st.image + 좌표 수동 입력으로 강등"),
-    ("pptx", "PPTX 발행", "없으면 S8 발행이 막힌다 — python-pptx 설치 필요"),
+    ("pptx", "PPTX 내보내기",
+     "없으면 발행·판은 그대로 되고 PPT 내보내기 버튼만 잠긴다 (modules/pptx_export.available)"),
 ]
 
 DIST = {"st_aggrid": "streamlit-aggrid", "pptx": "python-pptx",

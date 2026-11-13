@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 
+import functools
 import html
 import re
 
@@ -43,6 +44,9 @@ MEANING = {
     "구성 중": "accent",
     "제출": "ok",
     "발행": "ok",
+    # `--signal` 의 뜻 가운데 「발행 뒤 바뀜」이 이것이다 (디자인_규칙 §2-2) —
+    # 발행한 뒤 그 회의의 장을 고치면 「수정됨」이다 (S8 `meetings._edited`)
+    "수정됨": "signal",
     "열림": "accent",  # `directive.status` — 아직 끝나지 않은 지시
     "대기": "accent",  # `closure.decision` — 종결 결정이 아직 없다는 표시 (다른 칸이다)
     "완료": "ok",
@@ -70,6 +74,29 @@ def _tokens() -> str:
         if path.exists():
             parts.append(_light_only(path.read_text(encoding="utf-8")))
     return "\n".join(parts)
+
+
+# `--이름: 값;` 한 쌍. 뒤에 선언된 값이 이긴다 (CSS 와 같게) — `_tokens()` 가
+# 시안 파일 다음에 앱 파일을 이어 붙이므로, 앱에서 덮어쓴 값이 그대로 나온다
+_DECL = re.compile(r"--([\w-]+)\s*:\s*([^;{}]+);")
+
+
+@functools.lru_cache(maxsize=1)
+def _token_values() -> dict[str, str]:
+    """토큰 이름 → 값. 값을 **이 파일에 적지 않고** `tokens.css` 에서 읽는다."""
+    return {name: value.strip() for name, value in _DECL.findall(_tokens())}
+
+
+def token(name: str) -> str:
+    """토큰 하나의 값 — `token("--slide-band")` 는 `tokens.css` 에 적힌 띠 색 글자를 그대로
+    돌려준다. **값을 여기 옮겨 적지 않는다** (디자인_규칙 §2-1).
+
+    **화면과 PPT 가 같은 토큰을 보게 하는 문이다** (S8 `modules/pptx_export.py`).
+    `.py` 에는 hex 를 적을 수 없으므로 (디자인_규칙 §2-1) 색이 필요한 코드는 여기로 묻는다.
+
+    없는 토큰을 물으면 `KeyError` 다 — 색을 지어내지 않는다.
+    """
+    return _token_values()[name.lstrip("-")]
 
 
 # 토큰 변수만 쓴다. 이 안에 hex 가 없어야 한다.

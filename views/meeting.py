@@ -1,5 +1,5 @@
-"""회의자료 (S7) — F6 장 구성 · F7 요약 · F8 사실 되먹임 · F9 부서 제출 · F10 취합 ·
-F12 회의 진행 · F13 종결 승인 · F20 지시사항 (`requirements.md` §1-3-2).
+"""회의자료 (S7·S8) — F6 장 구성 · F7 요약 · F8 사실 되먹임 · F9 부서 제출 · F10 취합 ·
+F11 발행·PPT · F12 회의 진행 · F13 종결 승인 · F20 지시사항 (`requirements.md` §1-3-2).
 
 **회의자료의 한 장은 `report_item` 하나다** (2026-11-13 결정 D). 1차 회의자료는
 **틀(`form`)을 고르고 값을 고치는** 화면이다 — 사람이 글상자를 끌어 옮기지 않는다.
@@ -12,17 +12,21 @@ F12 회의 진행 · F13 종결 승인 · F20 지시사항 (`requirements.md` §
 **표현은 `report_item`, 사실은 `block`.** 「장」 탭의 한 줄·형태·머리표는 회의자료 것이고,
 현상·원인·조치·결정 필요는 이슈 원장과 같은 한 벌이다 — 여기서 고치면 원장이 따라간다.
 
-**주 버튼은 한 화면에 하나다** (규칙 2-5). 부서 자료는 「제출」, 나머지는 「기록하고 다음」이다.
+**주 버튼은 한 화면에 하나다** (규칙 2-5) — 탭마다 하나다. 「장 구성」은 부서 자료면
+「제출」(F9)·나머지 회의면 「발행」(F11)이고, 「회의 진행」은 「기록하고 다음」이다.
+**발행은 되돌릴 수 없어 확인을 받는다** (규칙 2-6) — 그 자리만 그렇다.
 **「종결」은 부서가 하지 않는다** (`CLAUDE.md` §6-7) — 승인은 부서 현안 공유회의 진행 화면이다.
 """
 from __future__ import annotations
 
 import datetime
 import html
+from pathlib import Path
 
 import streamlit as st
 
 from modules import meetings as mg
+from modules import pptx_export
 from views import theme, ui
 
 
@@ -351,10 +355,7 @@ def _tab_items(info: dict[str, object], rows: list[dict[str, object]]) -> None:
     if info["갈래"] == "dept":
         _submit(info, rows)
     else:
-        st.caption(
-            "공유회·팀장 정보회의는 「제출」이 아니라 「발행」이다. "
-            "발행과 PPT 내보내기는 아직 쓸 수 없다."
-        )
+        _publish(info, rows)
 
 
 def _submit(info: dict[str, object], rows: list[dict[str, object]]) -> None:
@@ -366,7 +367,10 @@ def _submit(info: dict[str, object], rows: list[dict[str, object]]) -> None:
             f'{info["판"]}판으로 제출됐다. 그 판은 회의에서 본 그대로 남는다.',
             icon=":material/check_circle:",
         )
-    st.caption("제출하면 판이 하나 오르고 그 판의 글이 굳는다. 「종결」은 이슈에 쓰는 말이라 여기 없다.")
+    st.caption(
+        "제출하면 판이 하나 오르고 그 판의 글이 굳는다. 「종결」은 이슈에 쓰는 말이라 "
+        "여기 없다. PPT 는 「판」 탭에서 판마다 내려받는다."
+    )
     # 이 화면의 **유일한** 주 버튼이다 (규칙 2-5)
     if st.button(
         "제출", key=f"submit_{mid}", type="primary", icon=":material/send:",
@@ -379,6 +383,52 @@ def _submit(info: dict[str, object], rows: list[dict[str, object]]) -> None:
     ):
         v = mg.submit(mid)
         st.toast(f"{v}판으로 제출했다", icon=":material/check:")
+        st.rerun()
+
+
+def _publish(info: dict[str, object], rows: list[dict[str, object]]) -> None:
+    """F11 발행 — 판으로 고정한다. **「제출」과 쌍이고 부서 자료가 아닌 회의의 말이다.**
+
+    **되돌릴 수 없는 일이라 확인을 받는다** (`docs/디자인_규칙.md` §2-6) — 장 빼기처럼
+    바로 하고 되돌리기를 주는 자리가 아니다. 판은 지워지지 않는다.
+    막는 것은 화면이 아니라 `mg.publish()` 다 — 여기 버튼은 거들기만 한다.
+    """
+    mid = str(info["ID"])
+    if info["상태"] == "발행":
+        st.success(
+            f'{info["판"]}판으로 발행됐다. 그 판은 회의에서 본 그대로 남는다.',
+            icon=":material/check_circle:",
+        )
+    elif info["상태"] == "수정됨":
+        # `--signal` 의 뜻 「발행 뒤 바뀜」 — 상태 칩도 같은 색이다 (`views/theme.py`)
+        st.warning(
+            f'{info["판"]}판을 발행한 뒤 장이 바뀌었다 — 다시 발행하면 '
+            f'{int(info["판"] or 0) + 1}판이 되고 {info["판"]}판은 그대로 남는다.',
+            icon=":material/edit_note:",
+        )
+    st.caption(
+        "발행하면 판이 하나 오르고 그 판의 글이 굳는다. 발행 뒤 장을 고치면 「수정됨」으로 "
+        "보이고, 다시 발행하면 다음 판이다. PPT 는 「판」 탭에서 판마다 내려받는다."
+    )
+    can = bool(rows) and info["상태"] != "발행"
+    ok = st.checkbox(
+        "판으로 굳히는 것을 확인했다", key=f"pubok_{mid}", disabled=not can,
+        help="발행은 되돌릴 수 없다 — 옛 판은 지워지지 않고 그대로 남는다",
+    )
+    # 이 탭의 **유일한** 주 버튼이다 (규칙 2-5). 부서 자료에서는 「제출」이 그 자리다
+    if st.button(
+        "발행", key=f"publish_{mid}", type="primary", icon=":material/campaign:",
+        disabled=not can or not ok,
+        help=(
+            "고친 것이 없다 — 장을 고치면 「수정됨」이 되고 그때 다시 발행한다"
+            if info["상태"] == "발행"
+            else "실은 장이 있어야 발행할 수 있다" if not rows
+            else "확인에 체크하면 누를 수 있다" if not ok
+            else "이 회의자료를 판으로 고정한다"
+        ),
+    ):
+        v = mg.publish(mid)
+        st.toast(f"{v}판으로 발행했다", icon=":material/check:")
         st.rerun()
 
 
@@ -556,14 +606,52 @@ def _tab_directives(info: dict[str, object], rows: list[dict[str, object]]) -> N
         )
 
 
+# ── F11 PPT 내보내기 ──────────────────────────────────────────────────────
+def _ppt(mid: str, ver: int, made: dict[int, str]) -> None:
+    """판 하나를 `.pptx` 로 — **편집 가능한 PPT** 다 (F11).
+
+    만드는 일과 내려받는 일을 가른다. 판마다 미리 만들어 두면 화면을 그릴 때마다
+    파일을 다 만들어야 한다 — 누른 판만 만든다. 파일은 `out/` 에 남는다
+    (`config.paths.ensure_out`, 사내망 전환 지점).
+
+    `python-pptx` 가 없으면 **발행은 그대로 되고 이 버튼만 잠긴다** (`code-gen.md` §4⑦).
+    """
+    has = pptx_export.available()
+    col1, col2 = st.columns([1, 1])
+    if col1.button(
+        "PPT 만들기", key=f"pptmk_{mid}_{ver}", icon=":material/slideshow:", disabled=not has,
+        help=pptx_export.UNAVAILABLE if not has else "판에 굳은 글로 .pptx 를 만든다 — 파워포인트에서 글상자를 옮길 수 있다",
+    ):
+        path = pptx_export.export(mid, ver)
+        made[ver] = str(path)
+        st.toast(f"{path.name} 만들었다", icon=":material/check:")
+        st.rerun()
+    made_path = Path(made[ver]) if made.get(ver) else None
+    if made_path is None or not made_path.exists():
+        return
+    col2.download_button(
+        "PPT 내려받기", data=made_path.read_bytes(), file_name=made_path.name,
+        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        key=f"pptdl_{mid}_{ver}", icon=":material/download:",
+    )
+    st.caption(f"{made_path} 에 있다")
+
+
 def _tab_versions(info: dict[str, object]) -> None:
-    rows = mg.versions(str(info["ID"]))
+    mid = str(info["ID"])
+    rows = mg.versions(mid)
     st.caption("판은 회의에서 본 그대로 남는다. 뒤에 사실이 바뀌어도 이 글은 바뀌지 않는다.")
     if not rows:
-        st.caption("아직 판이 없다 — 제출하면 1판이 된다")
+        st.caption(
+            "아직 판이 없다 — 부서 자료는 「제출」, 나머지 회의는 「발행」을 하면 1판이 된다"
+        )
         return
+    made: dict[int, str] = st.session_state.setdefault(f"ppt_{mid}", {})
     for r in rows:
-        ui.card(f'{r["판"]}판', f'{r["때"]} · 장 {r["장"]}개')
+        with st.container(border=True):
+            st.markdown(f'**{r["판"]}판**')
+            st.caption(f'{r["때"]} · 장 {r["장"]}개')
+            _ppt(mid, int(str(r["판"])), made)
 
 
 # ── 회의 한 건 ─────────────────────────────────────────────────────────────

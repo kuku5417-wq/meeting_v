@@ -21,9 +21,11 @@
 
 ## 다음 할 일
 
-1. **P3 S8 — 발행·PPTX (F11).** `modules/pptx_export.py`. 「편집 가능한 PPT」가 여기서 나온다 —
-   1차 회의자료가 틀을 고르는 화면이라, 자유 배치는 파워포인트에서 고치는 것으로 푼다 (§2-D).
-   `meeting_version.snapshot_json` 이 판의 글을 이미 담고 있다 (S7).
+1. **S8 검토 — 발표 뒤 바로.** 만들기는 끝났는데 **`test-writer`·검토 셋을 건너뛰고 올렸다**
+   (2026-11-13 3시 발표 때문에). S7 이 세 바퀴에서 버그 10건을 뱉은 것을 생각하면
+   **S8 에도 있을 가능성이 높다.** `/slice` 의 뒷부분만 돌리면 된다.
+2. **S7-b 지표 (F16)** · **S9 지식·챗봇 (F15)** · **S10 홈 (F19)** — 남은 슬라이스.
+   S9 는 사외망에서 챗봇을 끝까지 확인할 수 없다는 것부터 정해야 한다.
 3. **끝난 슬라이스의 소급 테스트** — S0~S6 은 `test-writer` 가 없을 때 만들어져 **바탕 테스트 2개뿐**이다.
    S7 을 `/slice` 로 한 바퀴 돌려 본 뒤, 업무 규칙(종결 권한·상태 전이·`ensure_sn`·근거 없는 값 버리기)에
    테스트를 소급해서 붙일지 정한다.
@@ -103,7 +105,7 @@ flowchart LR
 - [x] S6 기록함 — F1. 메모 원본 보존, 근거 없는 AI 값은 코드가 버림, 사외망에서는 직접 적기로 강등
 - [x] S7 회의자료 — F6 장 구성(추가·빼기·위·아래 버튼·형태 전환)·F7 요약·F8 사실 되먹임(**1차로 확정**, §2-F)·F9 부서 제출(판 고정)·F10 취합(**최신 제출판 참조**, 공유회만)·F12 진행(결정하면 `decision_needed` 비움)·F13 종결 승인·보류·F20 지시사항(**낸 주차부터**). **기간 표는 2차.** `/slice` 를 처음 쓴 슬라이스 — 검토 **세 바퀴**에서 버그 10건·규칙 위반 7건·문서 어긋남 11건이 나왔고 전부 처리했다 (아래 "S7 에서 배운 것")
 - [ ] **S7-b 지표** — `metric_def`·`metric_value`·`app_setting` + 「지표 요약」 장 (F16). S7 에서 **떼어 냈다** (2026-11-13, §2) — 표 3종에 입력 화면과 「평소 범위 = 최근 n주 평균 ±2σ」 계산이 딸려 와 그 자체로 한 슬라이스다
-- [ ] S8 발행·PPTX — F11
+- [~] S8 발행·PPTX — F11. 발행(`publish()`·판·「수정됨」)과 `.pptx` 내보내기(`modules/pptx_export.py`, 시안 틀·토큰 색). **만들기는 끝났으나 `test-writer`·검토 셋을 건너뛰었다** — 3시 발표 때문에 먼저 올렸다. 그래서 `[x]` 가 아니다
 - [ ] S9 지식·챗봇 — F15
 - [ ] S10 홈 — F19, **마지막** (앞 슬라이스가 다 있어야 숫자를 센다)
 - [x] **SD 화면 디자인** — 흰 사이드바·토큰·의미 색(라이트 전용), 글꼴 서브셋, 컴포넌트 토큰(`views/ui.py`), 날짜 고르기까지 확정. `design_check` 0건. 남은 [제안]은 그 화면을 손댈 때 함께 본다 (아래 "디자인" 절)
@@ -500,6 +502,8 @@ cd data/samples/masters && uv run python -X utf8 _check.py; echo "EXIT=$?"; cd -
 | 2026-11-13 | P1 | **에이전트 묶음 도착** — `test-writer`·`code-reviewer` 2종과 `/slice` 스킬이 들어오고 기존 에이전트 3종의 경계 문구가 보완됐다. 묶음이 `ROADMAP.md`(499줄)를 11-12 교육장 판(89줄)으로 **또 덮어** `HEAD` 에서 되살리고 묶음 항목만 합쳤다 | 되살린 판 499줄 + 더한 4줄, S-1~S6·SD `[x]` 복구 확인 / `roadmap.py update` 통과 / `guard-test` FAIL 0 / 진단 EXIT=0 |`a6c9433` |
 | 2026-11-13 | P3 | **사건 당시 단계** — `block.occurred_on` 칸 추가(승인받고 더함), `extract.find_date`·`date_for` 가 메모에서 날짜를 읽어 미리 채우고 근거 구간을 `source_span` 에 남김, `issues.stage_at()` (그때, 지금). 원장 카드·상세 머리·「지식 매핑」 탭(호선 옆)·등록 폼에 보인다. 날짜 고르기 토큰을 캘린더로 확정. `db.add_new_columns()` 로 작업본 DB 에 칸만 더한다 | doctest 통과 / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / 앱에서 `11/12 SN2512` 메모 → 발생일 자동 채움 → 「그때 시운전기간 · 지금 안벽기간」 확인 |`7989efa` |
 | 2026-11-13 | P3 S7 | **S7 어긋남 3건 수정**(`spec-guard` 2차) — 저장 값을 **원본 `docs/03` 어휘**로 (`meeting.status` 「구성 중」/제출, `directive.status` 「열림」, `start_mode` `carry`/`blank` + 화면 라벨은 `START_MODE_LABELS` 한 군데), 취합은 **공유회에만**(팀장 정보회의의 「공유회에서 가져오기」는 2차), `report_item.src` 는 「참조한 제출판 장의 `id`」(원본의 출처 구분은 2차에 자리를 새로 정한다), 머리 줄에 F8 추가, `collect()` 독스트링을 두 경우로 갈라 적음 | `check_db` EXIT=0(37표·99행) / `design_check` 0건 / `pytest` 72 passed **4 failed** — 바뀐 값을 기다리는 테스트 3자리(`"이어받기"`·`"대기"`·`"초안"`)라 `test-writer` 가 맞춘다 | |
+| 2026-11-13 | 데모 | **발표용 공개 데모 준비** — `llm_client` 에 **Claude 갈래**(`llm_provider="claude"`). `CLAUDE.md` §3·§6-9 의 **예외**로 열었고 경계를 문서에 적었다(데모 전용·가상 데이터만·사내망은 `inhouse` 그대로). 화면이 「실제 회사 메모를 넣지 마십시오」를 띄운다. `LLMFailed` 를 갈라 키가 틀려도 **직접 적기로 이어진다** | 틀린 키로 실제 API 까지 가서 `AuthenticationError` → `LLMFailed` 로 잡히는 것 확인(키 값은 안 찍힘) / 설정 없으면 지금처럼 「직접 적기」 / `pytest` 86 · 진단 4개 EXIT=0 · `design_check` 0건 | |
+| 2026-11-13 | P3 S8 | **발행·PPTX** — `modules/pptx_export.py`(판 → `.pptx`, 시안 틀 16:9·머리띠·쪽수·form 4종), `meetings.publish()`(`submit()` 과 쌍, 모듈이 막는다), 「수정됨」, 화면의 발행·PPT 버튼, `theme.token()`(화면과 PPT 가 **같은 토큰**을 본다). **검토는 발표 뒤** | `pytest` 86 / `check_libs` EXIT=0 / `design_check` 0건 / `.pptx` 두 개를 **실제로 열어** 장 6·5개·16:9·쪽수·그림 확인, 도형 색이 `tokens.css` 값과 **정확히 일치**(`26344A`·`F0A63C`·`9A5A00`) | |
 | 2026-11-13 | P3 S7 | **회의자료 마무리** — 검토 **세 바퀴**(`spec-guard`·`code-reviewer`·`ui-reviewer` × 3)에서 나온 버그 10·규칙 위반 7·문서 어긋남 11건을 전부 처리. 결정 D~L **아홉 건**이 이 과정에서 나왔다. 마지막 바퀴: 요약 장으로만 실린 종결요청도 승인되게(`_block_ids_on` 이 판의 「이슈」까지 센다), `report_item.src` FK 떼기(판을 가리키므로 행이 없어도 된다), `collect()` 를 모듈에서 막기(취합은 공유회만), `closure.decision` 주석 | `pytest` **전부 통과** / 진단 4개·`_check.py` EXIT=0 / `design_check` 0건 / `guard-test` FAIL 0 / FK 를 켠 임시 DB 에서 장 빼기·요약 승인·exec 취합 거부 직접 확인 / 앱에서 회의 목록·공유회 참조 장 눈으로 확인 | |
 | 2026-11-13 | P3 S7 | **회의자료** — 운영 표 6종 선언(`meeting`·`meeting_version`·`report_item`·`report_item_block`·`meeting_comment`·`directive`, 원본 `docs/03` 칸 그대로), `modules/meetings.py`, `views/meeting.py`, `app.py` 분기 1줄, `theme.MEANING` 에 회의 상태 9개. F6 장 구성(위·아래 버튼·형태 4종·빼기 되돌리기·이어받기)·F7 요약·F9 제출(판 고정)·F10 취합(`src` 참조)·F12 진행(결정하면 `decision_needed` 비움)·F13 승인·보류·F20 지시사항. **F8(사실 되먹임)은 1차로 확정**(§2-F) — 만들 때는 2차로 알고 시작했는데 `spec-guard` 가 원본과 어긋난 것을 찾아 그날 문서를 고쳤다. **기간 표(`kind=table`)는 2차** | `check_db` EXIT=0(37표·99행) / `check_data` EXIT=0 / `_check.py` EXIT=0 / `design_check` 0건 / `pytest` 19 passed / `AppTest` 로 목록·부서 자료·공유회 한 바퀴(제출→취합→결정→승인→지시→완료 보고) 예외 0 | |
 | 2026-11-13 | P0 | **미결 A·B 닫음** — 회의자료는 `meeting` 하나로, `hull.stage` 는 볼 때마다 계산. `requirements.md` §2 에 열려 있는 결정이 없어져 S7 이 열렸다 | 13척 중 12척이 DB 값과 일치, SN2512 만 날짜 때문에 다름(의도한 결과) |`6b068be` |

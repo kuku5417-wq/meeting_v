@@ -12,7 +12,8 @@ from __future__ import annotations
 import streamlit as st
 
 from modules import extract, issues
-from modules.llm_client import LLMNotConfigured, is_configured
+from modules import llm_client
+from modules.llm_client import LLMFailed, LLMNotConfigured, is_configured
 from views import theme, ui
 
 
@@ -115,7 +116,16 @@ def render() -> None:
         st.success(f"메모 저장 — {mid[:8]}")
 
     if not is_configured():
-        col2.info("사내 LLM 설정이 없어 **직접 적기**로 간다. 사외망에서는 정상이다.", icon=":material/edit_note:")
+        col2.info("LLM 설정이 없어 **직접 적기**로 간다. 설정을 안 채운 상태에서는 정상이다.",
+                  icon=":material/edit_note:")
+    elif llm_client.provider() == llm_client.CLAUDE:
+        # 공개 데모 전용 갈래다 (CLAUDE.md §3·§6-9 의 예외). 글이 **밖으로 나간다**는 것을
+        # 쓰는 사람이 알아야 한다 — 이 경고가 그 예외를 떠받치는 가드레일이다.
+        col2.warning(
+            "**외부 LLM(Claude)** 으로 정리합니다. 붙여넣은 글이 회사 밖으로 나갑니다 — "
+            "**실제 회사 메모를 넣지 마십시오.** 데모용 가상 메모만 씁니다.",
+            icon=":material/public:",
+        )
 
     memo_id = st.session_state.get("last_memo")
     if memo_id:
@@ -127,10 +137,11 @@ def render() -> None:
         if is_configured():
             if st.button("AI 로 정리", icon=":material/auto_awesome:"):
                 try:
-                    with st.spinner("사내 LLM 이 메모를 정리하는 중"):
+                    with st.spinner("LLM 이 메모를 정리하는 중"):
                         kept, dropped = extract.extract(text)
-                except LLMNotConfigured as e:
-                    st.error(str(e))
+                except (LLMNotConfigured, LLMFailed) as e:
+                    # 설정이 없거나(정상) 부르다 실패했거나(사람이 고칠 것). 둘 다 **직접 적기**로 이어진다
+                    st.error(f"{e} — 아래에서 **직접 적기**로 이어갈 수 있다.")
                     kept, dropped = [], []
                 st.session_state["cands"] = kept
                 st.session_state["dropped"] = dropped

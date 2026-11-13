@@ -46,6 +46,7 @@
 | 실행 | `uv` |
 
 **지금은 사외망 작업본이다.** 사내망 전용 요소(`pymysql`·`pyodbc`·NAS UNC 경로·SOLA·`win32com`·Outlook·프록시)는 전부 금지다.
+(외부 LLM 은 **공개 데모에 한해** 열려 있다 — §6-9 의 예외, `modules/llm_client.py` 의 `claude` 갈래.)
 전환 지점만 남기고 사내망 고정본은 `ROADMAP.md` P5에서 따로 만든다.
 `data/samples/masters/*.csv`는 실데이터 전환 시 **CSV만 교체**한다(`SPEC.md`).
 
@@ -116,6 +117,7 @@ python .claude/tools/roadmap.py update
 9. **민감정보.** 보고 내용은 **사내 LLM으로만** 보낸다. 사진 모자이크 기능을 유지한다.
    - 이 저장소는 사외망 작업본이라 **실제 회사 메모를 넣지 않는다.** 샘플·가상 데이터만 쓴다.
    - 원본에 있던 외부 API 체인(SOLA → Upstage → OpenAI → Mock)은 **가져오지 않는다.** 프록시·외부 호출은 금지(§3). 사내 LLM 전환 지점은 `modules/llm_client.py` 한 군데에 둔다(S3).
+   - **예외 하나 (2026-11-13, 공개 데모 전용).** 발표용 데모에서는 `llm_provider = "claude"` 로 **Anthropic API** 를 쓴다. 갈래는 `llm_client._chat()` **한 군데**에서만 갈리고, **사내망 고정본은 `inhouse` 그대로**다. 데모는 **가상 데이터만** 다루고, 화면이 「실제 회사 메모를 넣지 마십시오」를 띄운다. 자세한 것은 `docs/데모_배포.md`. **이 예외를 다른 외부 호출로 넓히지 않는다.**
 
 ## 7. 금지 사항
 

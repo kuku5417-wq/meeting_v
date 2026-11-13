@@ -1,5 +1,5 @@
-"""회의자료 — 구성·요약·사실 되먹임·제출·취합·진행·종결·지시사항
-(F6 · F7 · F8 · F9 · F10 · F12 · F13 · F20, `requirements.md` §1-3-2).
+"""회의자료 — 구성·요약·사실 되먹임·제출·취합·진행·종결·지시사항·발행
+(F6 · F7 · F8 · F9 · F10 · F11 · F12 · F13 · F20, `requirements.md` §1-3-2).
 
 화면(`views/meeting.py`)은 여기만 부른다. DB 를 직접 열지 않는다.
 
@@ -22,6 +22,7 @@
 
 **업무 규칙은 여기서 막는다.** 화면이 버튼을 가려 주는 것에 기대지 않는다 —
 종결은 공유회의 「종결요청」 이슈만(§6-7), 취합도 공유회만, 제출은 부서 자료만,
+발행은 부서 자료가 **아닌** 회의만,
 빈 글은 기록하지 않는다.
 막을 때는 `NotAllowed` 에 **왜 막혔는지**를 적는다.
 
@@ -58,8 +59,9 @@ ADHOC_KINDS = ("hull", "review")
 # 어휘(`meeting.status`·`report_item.kind`·`closure.decision`·`directive.status`)는
 # `modules/models.py` 의 칸 옆에 적혀 있다 — 같은 내용을 두 군데 적지 않는다 (`CLAUDE.md` §2).
 # **저장되는 값은 원본 `docs/03` 어휘다** — 사내망 실데이터와 값을 맞추기 위해서다
-# (2026-11-13 결정). 부서 자료는 「제출」, 나머지는 「발행」이고 **「발행」은 S8 몫**이다.
-# 1차에서 코드가 넣는 `meeting.status` 는 「구성 중」과 「제출」 둘이다.
+# (2026-11-13 결정). **부서 자료는 「제출」(`submit`), 나머지 회의는 「발행」(`publish`)**
+# 이고, 발행 뒤에 장을 고치면 「수정됨」이다 (`_edited`). 코드가 넣는 값은 그 넷이다 —
+# 「종료」는 회의가 끝난 뒤의 말이라 아직 아무 데서도 넣지 않는다.
 
 # `meeting.start_mode` 는 **저장 값이 영문 코드**고 (원본 `docs/03`: carry/blank)
 # **화면에 보이는 말은 「이어받기」·「빈 자료」**다. 라벨과 저장 값이 갈리는 곳은 여기
@@ -329,6 +331,22 @@ def _block_ids_on(s: Session, meeting_id: str) -> set[str]:
     return out
 
 
+def _edited(s: Session, meeting_id: str) -> None:
+    """**발행한 뒤에 그 회의의 장을 고치면 「수정됨」이다** (F11, 원본 `docs/03`).
+
+    장(`report_item`)이 늘거나 줄거나 표현이 바뀐 자리에서만 부른다 — 「수정됨」은
+    **회의 단위**의 말이다. 사실(`block`)을 고친 것은 여기 걸지 않는다: 발행 뒤 사실이
+    바뀌면 **장 단위**로 「변경」만 표시하는 것이 2차고 (결정 F), 둘을 섞으면 회의 전체가
+    「수정됨」이 되어 무엇이 바뀌었는지 가려진다.
+
+    「제출」(부서 자료)은 건드리지 않는다 — 재제출 규칙은 2차다 (F9).
+    다시 발행하면 판이 하나 오르고 「발행」으로 돌아간다 (`publish`).
+    """
+    mt = s.get(m.Meeting, meeting_id)
+    if mt.status == "발행":
+        mt.status = "수정됨"
+
+
 def add_items(meeting_id: str, block_ids: list[str], form: str = "detail") -> int:
     """고른 이슈를 장으로 만든다 (F6). 이미 실린 이슈는 건너뛴다. 돌려주는 것은 더한 수."""
     now = datetime.datetime.now()
@@ -357,6 +375,8 @@ def add_items(meeting_id: str, block_ids: list[str], form: str = "detail") -> in
             used.add(bid)
             order += 1
             made += 1
+        if made:
+            _edited(s, meeting_id)
         s.commit()
     return made
 
@@ -386,6 +406,7 @@ def add_summary(meeting_id: str, block_ids: list[str], line: str = "") -> str:
         s.flush()
         for i, bid in enumerate(block_ids, start=1):
             s.add(m.ReportItemBlock(item_id=item_id, block_id=bid, order_no=i))
+        _edited(s, meeting_id)
         s.commit()
     return item_id
 
@@ -596,20 +617,26 @@ def _own_item(s: Session, item_id: str) -> m.ReportItem:
 def set_line(item_id: str, line: str) -> None:
     """회의용 한 줄 — **표현이다.** `block` 을 고치지 않는다."""
     with session() as s:
-        _own_item(s, item_id).line = line.strip() or None
+        it = _own_item(s, item_id)
+        it.line = line.strip() or None
+        _edited(s, it.meeting_id)
         s.commit()
 
 
 def set_form(item_id: str, form: str) -> None:
     """형태 전환 (F6). 틀만 바뀌고 사실은 그대로다."""
     with session() as s:
-        _own_item(s, item_id).form = form
+        it = _own_item(s, item_id)
+        it.form = form
+        _edited(s, it.meeting_id)
         s.commit()
 
 
 def set_tag_on(item_id: str, on: bool) -> None:
     with session() as s:
-        _own_item(s, item_id).tag_on = on
+        it = _own_item(s, item_id)
+        it.tag_on = on
+        _edited(s, it.meeting_id)
         s.commit()
 
 
@@ -684,6 +711,7 @@ def move_item(item_id: str, up: bool) -> bool:
         order[at], order[to] = order[to], order[at]
         for no, rid in enumerate(order, start=1):
             s.get(m.ReportItem, rid).order_no = no
+        _edited(s, it.meeting_id)
         s.commit()
         return True
 
@@ -706,6 +734,7 @@ def remove_item(item_id: str) -> dict[str, object]:
             m.ReportItemBlock.__table__.delete().where(m.ReportItemBlock.item_id == item_id)
         )
         s.delete(it)
+        _edited(s, snap["meeting_id"])
         s.commit()
     return {"item": snap, "children": [(b, o) for b, o in kids]}
 
@@ -717,6 +746,7 @@ def restore_item(undo: dict[str, object]) -> str:
         s.flush()
         for bid, order in undo["children"]:
             s.add(m.ReportItemBlock(item_id=undo["item"]["id"], block_id=bid, order_no=order))
+        _edited(s, str(undo["item"]["meeting_id"]))
         s.commit()
     return str(undo["item"]["id"])
 
@@ -797,7 +827,7 @@ def submit(meeting_id: str) -> int:
     """부서 회의자료를 제출한다 (F9) — `status` 가 「제출」이 되고 **판이 하나 오른다.**
 
     1차는 **상태 표시만**이다. 마감 시각·경고·재제출 규칙은 2차다 (`requirements.md` §1-3).
-    「제출」은 **부서 자료의 말이다** — 공유회·팀장 정보회의는 「발행」이고 그것은 S8 몫이라
+    「제출」은 **부서 자료의 말이다** — 공유회·팀장 정보회의는 「발행」(`publish`)이라
     여기서 막는다. 「종결」은 이슈에 쓰는 말이라 여기 없다 (`CLAUDE.md` §6-7).
     """
     now = datetime.datetime.now()
@@ -806,7 +836,7 @@ def submit(meeting_id: str) -> int:
         if mt.kind != "dept":
             raise NotAllowed(
                 f"「제출」은 부서 자료의 말이다 — {KIND_LABELS.get(mt.kind, mt.kind)}는 "
-                "「발행」이고, 판 고정은 S8(발행·PPTX)에서 한다"
+                "「발행」이다 (`publish`)"
             )
         mt.version = (mt.version or 0) + 1
         mt.status = "제출"
@@ -835,6 +865,57 @@ def versions(meeting_id: str) -> list[dict[str, object]]:
              "장": len(json.loads(r.snapshot_json or "[]"))}
             for r in rows
         ]
+
+
+def snapshot(meeting_id: str, version: int | None = None) -> tuple[int, list[dict[str, object]]]:
+    """판에 굳은 글 — `(판 번호, 장 목록)`. 판을 주지 않으면 **최신 판**이다.
+
+    **S8(PPTX)이 읽는 문이다** (`modules/pptx_export.py`) — 살아 있는 `report_item` 을
+    다시 긁지 않는다. 판이 「회의에서 본 그대로」이기 때문이다.
+    담는 키는 `requirements.md` §1-2-2 `meeting_version` 비고의 **계약**이고
+    적는 곳은 `_snapshot()` 하나다 — 키 이름을 바꾸면 PPTX 가 깨진다.
+
+    판이 없으면 `(0, [])` 다.
+    """
+    with session() as s:
+        return _snapshot_of(s, meeting_id, version)
+
+
+# ── F11 발행 ───────────────────────────────────────────────────────────────
+def publish(meeting_id: str) -> int:
+    """회의자료를 **발행**한다 (F11) — `status` 가 「발행」이 되고 **판이 하나 오른다.**
+
+    `submit()` 과 **쌍이다.** 「제출」은 부서가 공유회로 넘기는 말이고, 「발행」은 회의
+    자료를 판으로 고정하는 말이다 (`requirements.md` §2-K) — 그래서 **부서 자료는 여기서
+    막는다.** 화면이 버튼을 가려 주는 것에 기대지 않는다.
+
+    발행 **뒤에** 그 회의의 장을 고치면 「수정됨」이 된다 (`_edited`). 다시 발행하면
+    판이 또 하나 오르고 「발행」으로 돌아간다 — 옛 판은 그대로 남는다.
+    장 단위 「변경」 표시는 **2차**다 (결정 F) — 「수정됨」과 섞지 않는다.
+
+    `.pptx` 로 내보내는 일은 `modules/pptx_export.py` 가 이 판을 읽어 한다.
+    """
+    now = datetime.datetime.now()
+    with session() as s:
+        mt = s.get(m.Meeting, meeting_id)
+        if mt.kind == "dept":
+            raise NotAllowed(
+                "「발행」은 부서 자료의 말이 아니다 — 부서 회의자료는 부서 현안 공유회로 "
+                f"「제출」한다 (`submit`). {meeting_id} 는 {KIND_LABELS['dept']}다"
+            )
+        mt.version = (mt.version or 0) + 1
+        mt.status = "발행"
+        s.add(
+            m.MeetingVersion(
+                id=_rid("MV"),
+                meeting_id=meeting_id,
+                version=mt.version,
+                published_at=now,
+                snapshot_json=json.dumps(_snapshot(s, meeting_id), ensure_ascii=False),
+            )
+        )
+        s.commit()
+        return mt.version
 
 
 # ── F10 취합 ───────────────────────────────────────────────────────────────
@@ -916,6 +997,8 @@ def collect(meeting_id: str, source_meeting_ids: list[str]) -> int:
                 used |= set(bids)
                 order += 1
                 made += 1
+        if made:
+            _edited(s, meeting_id)
         s.commit()
     return made
 
